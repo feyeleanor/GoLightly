@@ -11,6 +11,7 @@ type Buffer struct {
 
 func (b *Buffer) Init(length int)						{ b.Resize(length, length) }
 func (b *Buffer) Len() int								{ return b.Len() }
+func (b *Buffer) Cap() int								{ return b.Cap() }
 func (b *Buffer) Slice(i, j int) *Buffer				{ return &Buffer{*b.IntVector.Slice(0, b.Len() - 1)} }
 func (b *Buffer) Clone() *Buffer						{ return b.Slice(0, b.Len() - 1) }
 func (b *Buffer) At(i int) int							{ return b.IntVector.At(i) }

@@ -1,3 +1,7 @@
+//	TODO:	bytecode optimisation
+//	TODO:	JIT compilation
+//	TODO:	AOT compilation
+
 package vm
 
 import "container/vector"

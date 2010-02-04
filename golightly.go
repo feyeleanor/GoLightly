@@ -4,7 +4,7 @@
 package golightly
 
 import(
-	"golightly/vm";
+	"feyeleanor/golightly/vm";
 	"container/vector";
 )
 
