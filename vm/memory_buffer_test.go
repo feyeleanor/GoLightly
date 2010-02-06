@@ -1,68 +1,101 @@
-//	TODO: 	Write tests :)
+//	TODO: 	Add tests for GetBuffer and PutBuffer
 
 package vm
 import "testing"
 import "os"
 
-func populate(b *Buffer) {
+var predicate_index int
+
+func defaultBuffer() *Buffer {
+	b := new(Buffer)
+	b.Init(6)
 	b.Set(0, 37)
 	b.Set(1, int(byte("hello world"[1])))
 	f := 3.7
 	b.Set(2, int(f))
+	return b
+}
+
+func valueTest(object interface{}, t *testing.T, value, target_value interface{}) {
+	predicate_index += 1
+	if value != target_value { t.Errorf("%T: test %d -> expected %v, got %v", object, predicate_index, target_value, value) }
 }
 
 func checkDefaultBuffer(b *Buffer, t *testing.T) {
-	if b.Len() != 6 { t.Errorf("%T: B1) expected 6, got %d", b, b.Len()) }
-	if b.Cap() != 6 { t.Errorf("%T: B2) expected 6, got %d", b, b.Cap()) }
-	if b.At(0) != 37 { t.Errorf("%T: B3) expected 37, got %d", b, b.At(0)) }
-	if b.At(1) != int(byte("e"[0])) { t.Errorf("%T: B4) expected 'e', got %d", b, b.At(1)) }
-	if b.At(2) != 3 { t.Errorf("%T: B5) expected 3, got %d", b, b.At(2)) }
+	valueTest(b, t, b.Len(), 6)
+	valueTest(b, t, b.Cap(), 6)
+	valueTest(b, t, b.At(0), 37)
+	valueTest(b, t, b.At(1), int(byte("e"[0])))
+	valueTest(b, t, b.At(2), 3)
+	valueTest(b, t, b.At(3), 0)
+	valueTest(b, t, b.At(4), 0)
+	valueTest(b, t, b.At(5), 0)
 }
 
 func TestCreateBuffer(t *testing.T) {
 	os.Stdout.WriteString("Buffer Creation\n")
-	b := new(Buffer)
-	b.Init(6)
-	populate(b)
-	checkDefaultBuffer(b, t)
-}
-
-func checkBufferSlice(b *Buffer, t *testing.T) {
-	if b.Len() != 2 { t.Errorf("%T: C1) expected 6, got %d", b, b.Len()) }
-	if b.Cap() != 2 { t.Errorf("%T: C2) expected 6, got %d", b, b.Cap()) }
-	if b.At(0) != int(byte("e"[0])) { t.Errorf("%T: C3) expected 'e', got %d", b, b.At(0)) }
-	if b.At(1) != 3 { t.Errorf("%T: C4) expected 3, got %d", b, b.At(1)) }
-}
-
-func TestSlice(t *testing.T) {
-	os.Stdout.WriteString("Slicing\n")
-	b := new(Buffer)
-	b.Init(6)
-	populate(b)
-	checkBufferSlice(b.Slice(1, 3), t)
+	checkDefaultBuffer(defaultBuffer(), t)
 }
 
 func TestClone(t *testing.T) {
 	os.Stdout.WriteString("Cloning\n")
-	b := new(Buffer)
-	b.Init(6)
-	populate(b)
-	checkDefaultBuffer(b.Clone(), t)
+	checkDefaultBuffer(defaultBuffer().Clone(), t)
+}
+
+func TestSlice(t *testing.T) {
+	os.Stdout.WriteString("Slicing\n")
+	b := defaultBuffer().Slice(1, 3)
+	valueTest(b, t, b.Len(), 2)
+	valueTest(b, t, b.Cap(), 2)
+	valueTest(b, t, b.At(0), int(byte("e"[0])))
+	valueTest(b, t, b.At(1), 3)
 }
 
 func TestMaths(t *testing.T) {
 	os.Stdout.WriteString("Maths\n")
-	b := new(Buffer)
-	b.Init(6)
-	populate(b)
+	b := defaultBuffer()
 	b.Increment(0)
-	if b.At(0) != 38 { t.Errorf("%T: D1) expected 38, got %d", b, b.At(0)) }
+	valueTest(b, t, b.At(0), 38)
 	b.Decrement(0)
-	if b.At(0) != 37 { t.Errorf("%T: D2) expected 37, got %d", b, b.At(0)) }
+	valueTest(b, t, b.At(0), 37)
 	b.Add(1, 5)
-	if b.At(1) != int(byte("j"[0])) { t.Errorf("%T: D3) expected 'j', got %d", b, b.At(1)) }
+	valueTest(b, t, b.At(1), int(byte("j"[0])))
 	b.Subtract(2, 4)
-	if b.At(2) != -1 { t.Errorf("%T: D4) expected -1, got %d", b, b.At(2)) }
-	b.Multiply(2, -2)
-	if b.At(2) != 2 { t.Errorf("%T: D5) expected 2, got %d", b, b.At(2)) }
+	valueTest(b, t, b.At(2), -1)
+	b.Multiply(2, -4)
+	valueTest(b, t, b.At(2), 4)
+	b.Divide(2, 2)
+	valueTest(b, t, b.At(2), 2)
+	b.And(2, 10)
+	valueTest(b, t, b.At(2), 2)
+	b.Or(2, 10)
+	valueTest(b, t, b.At(2), 10)
+	b.Xor(2, 2)
+	valueTest(b, t, b.At(2), 8)
+}
+
+func TestLogic(t *testing.T) {
+	os.Stdout.WriteString("Logic\n")
+	b := defaultBuffer()
+	valueTest(b, t, b.LessThan(2, 3), false)
+	valueTest(b, t, b.Equals(2, 3), true)
+	valueTest(b, t, b.GreaterThan(2, 3), false)
+	valueTest(b, t, b.LessThanZero(2), false)
+	valueTest(b, t, b.EqualsZero(2), false)
+	valueTest(b, t, b.GreaterThanZero(2), true)
+	b.Copy(1, 2)
+	valueTest(b, t, b.At(1), 3)
+	valueTest(b, t, b.LessThan(1, 3), false)
+	valueTest(b, t, b.Equals(1, 3), true)
+	valueTest(b, t, b.GreaterThan(1, 3), false)
+	valueTest(b, t, b.LessThanZero(1), false)
+	valueTest(b, t, b.EqualsZero(1), false)
+	valueTest(b, t, b.GreaterThanZero(1), true)
+	b.Set(1, 0)
+	valueTest(b, t, b.LessThan(1, 3), true)
+	valueTest(b, t, b.Equals(1, 3), false)
+	valueTest(b, t, b.GreaterThan(1, 3), false)
+	valueTest(b, t, b.LessThanZero(1), false)
+	valueTest(b, t, b.EqualsZero(1), true)
+	valueTest(b, t, b.GreaterThanZero(1), false)
 }
