@@ -11,12 +11,10 @@ type Buffer struct {
 }
 
 func (b *Buffer) Init(length int)						{ b.IntVector.Resize(length, length) }
-func (b *Buffer) Len() int								{ return b.IntVector.Len() }
+func (b *Buffer) Clear()								{ for i, _ := range b.IntVector { b.Set(i, 0) } }
 func (b *Buffer) Cap() int								{ return b.Len() }
 func (b *Buffer) Slice(i, j int) *Buffer				{ return &Buffer{*b.IntVector.Slice(i, j)} }
 func (b *Buffer) Clone() *Buffer						{ return b.Slice(0, b.Len()) }
-func (b *Buffer) At(i int) int							{ return b.IntVector.At(i) }
-func (b *Buffer) Set(i, x int)							{ b.IntVector.Set(i, x) }
 func (b *Buffer) Add(i, x int)							{ b.Set(i, b.At(i) + x) }
 func (b *Buffer) Subtract(i, x int)						{ b.Set(i, b.At(i) - x) }
 func (b *Buffer) Multiply(i, x int)						{ b.Set(i, b.At(i) * x) }

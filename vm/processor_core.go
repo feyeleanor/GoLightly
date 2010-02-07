@@ -1,25 +1,27 @@
+//	TODO:	Add support for storing and retrieving pointers to memory buffers
+
 package vm
 
 import "container/vector"
 
 type ExecutionFlags struct {
-	running				bool
-	illegal_operation	bool
-	stack_underflow		bool
-	segmentation_error	bool
+	Running				bool
+	Illegal_Operation	bool
+	Stack_Underflow		bool
+	Segmentation_Error	bool
 }
 func (f *ExecutionFlags) Clear() {
-	f.running = false
-	f.illegal_operation = false
-	f.stack_underflow = false
-	f.segmentation_error = false
+	f.Running = false
+	f.Illegal_Operation = false
+	f.Stack_Underflow = false
+	f.Segmentation_Error = false
 }
 
 type RegisterBlock struct {
-	PC				int;
-	I				*OpCode;
-	R				*Buffer;
-	M				*Buffer;
+	PC				int
+	I				*OpCode
+	R				*Buffer
+	M				*Buffer
 }
 func (r *RegisterBlock) Allocate(count int) {
 	r.PC = 0
@@ -34,6 +36,12 @@ func (r *RegisterBlock) Clone() *RegisterBlock {
 func (r *RegisterBlock) Replace(a *RegisterBlock) {
 	r.PC, r.I, r.R, r.M = a.PC, a.I, a.R, a.M
 }
+func (r *RegisterBlock) Clear() {
+	r.PC = 0
+	r.I = nil
+	r.R.Clear()
+	r.M = nil
+}
 
 type MMU struct {}
 func (m *MMU) Allocate(words int) *Buffer {
@@ -43,17 +51,16 @@ func (m *MMU) Allocate(words int) *Buffer {
 }
 
 type ProcessorCore struct {
-	ExecutionFlags;
-	InstructionSet;
-	MMU;
-	RegisterBlock;
-	program			[]OpCode;
-	call_stack		vector.Vector;
+	ExecutionFlags
+	InstructionSet
+	MMU
+	RegisterBlock
+	program			[]*OpCode
+	call_stack		vector.Vector
 }
 func (p *ProcessorCore) Init(registers int) {
-	p.InstructionSet.Init()
-	p.ExecutionFlags.Clear()
 	p.RegisterBlock.Allocate(registers)
+	p.InstructionSet.Init()
 	p.Define("jump",	func (o *OpCode)	{ p.Jump(o.a) })															//	JUMP	n
 	p.Define("call",	func (o *OpCode)	{ p.Call(o.a) })															//	CALL	n
 	p.Define("ret",		func (o *OpCode)	{ p.Return() })																//	RET
@@ -74,58 +81,67 @@ func (p *ProcessorCore) Init(registers int) {
 	p.Define("iand",	func (o *OpCode)	{ p.R.And(o.a, p.M.At(o.b)) })												//	IAND	r, m
 	p.Define("ior",		func (o *OpCode)	{ p.R.Or(o.a, p.M.At(o.b)) })												//	IOR		r, m
 	p.Define("ixor",	func (o *OpCode)	{ p.R.Xor(o.a, p.M.At(o.b)) })												//	IXOR	r, m
-	p.Define("malloc",	func (o *OpCode)	{ p.R.PutBuffer(o.a, p.MMU.Allocate(o.b)) })								//	MALLOC	r, n
-	p.Define("select",	func (o *OpCode)	{ p.M = p.R.GetBuffer(o.a) })												//	SELECT	r
+//	p.Define("malloc",	func (o *OpCode)	{ p.R.PutBuffer(o.a, p.MMU.Allocate(o.b)) })								//	MALLOC	r, n
+//	p.Define("select",	func (o *OpCode)	{ p.M = p.R.GetBuffer(o.a) })												//	SELECT	r
+	p.ResetState()
 }
 func (p *ProcessorCore) ValidPC() bool {
-	return (p.PC < len(p.program)) && p.running
+	return (p.PC < len(p.program)) && p.Running
 }
 func (p *ProcessorCore) Call(location int) {
-	p.call_stack.Push(p.RegisterBlock.Clone());
-	p.RegisterBlock.Allocate(p.R.Len());
-	p.PC = location;
+	p.call_stack.Push(p.RegisterBlock.Clone())
+	p.RegisterBlock.Allocate(p.R.Len())
+	p.PC = location
 }
 func (p *ProcessorCore) Return() {
 	if r := p.call_stack.Pop().(*RegisterBlock); r != nil {
 		p.RegisterBlock.Replace(r)
 	} else {
-		p.running = false
-		p.stack_underflow = true
+		p.Running = false
+		p.Stack_Underflow = true
 	}
 }
-func (p ProcessorCore) LoadProgram(program *[]OpCode) {
-	p.program = *program;
-	p.PC = 0;
-	p.ExecutionFlags.Clear();
+func (p *ProcessorCore) LoadProgram(program *[]*OpCode) {
+	p.program = *program
+	p.ResetState()
+	p.LoadInstruction()
 }
-func (p ProcessorCore) LoadInstruction() {
+func (p *ProcessorCore) LoadInstruction() {
 	if p.ValidPC() {
-		p.I = &p.program[p.PC];
+		p.I = p.program[p.PC]
 	} else {
-		p.segmentation_error = true
-		p.running = false
+		p.Segmentation_Error = true
+		p.Running = false
 	}
 }
-func (p ProcessorCore) StepForward() {
+func (p *ProcessorCore) ResetState() {
+	p.RegisterBlock.Clear()
+	p.ExecutionFlags.Clear()
+	p.Running = true
+}
+func (p *ProcessorCore) StepForward() {
 	p.PC++
+	p.LoadInstruction()
 }
-func (p ProcessorCore) StepBack() {
+func (p *ProcessorCore) StepBack() {
 	p.PC--
+	p.LoadInstruction()
 }
-func (p ProcessorCore) Jump(ops int) {
+func (p *ProcessorCore) Jump(ops int) {
 	p.PC += ops
 }
-func (p ProcessorCore) Execute() {
+func (p *ProcessorCore) Execute() {
 	if !p.InstructionSet.Invoke(p.I) {
-		p.running = false
-		p.illegal_operation = true
+		p.Running = false
+		p.Illegal_Operation = true
 	}
 }
-func (p ProcessorCore) Run() {
+func (p *ProcessorCore) Run() {
+	if p.PC > 0 { p.ResetState() }
+	p.LoadInstruction()
 	for {
-		p.LoadInstruction()
-		if p.running {
-			p.Execute()
+		p.Execute()
+		if p.Running {
 			p.StepForward()
 		} else {
 			break
