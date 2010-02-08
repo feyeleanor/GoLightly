@@ -1,4 +1,5 @@
 //	TODO:	Add support for storing and retrieving pointers to memory buffers
+//	TODO:	ProcessorCore cloning should create a comms channel by which the parent and child cores can communicate
 
 package vm
 
@@ -52,38 +53,52 @@ func (m *MMU) Allocate(words int) *Buffer {
 
 type ProcessorCore struct {
 	ExecutionFlags
-	InstructionSet
 	MMU
 	RegisterBlock
+	*InstructionSet
 	program			[]*OpCode
 	call_stack		vector.Vector
 }
-func (p *ProcessorCore) Init(registers int) {
+func (p *ProcessorCore) Init(registers int, instructions *InstructionSet) {
 	p.RegisterBlock.Allocate(registers)
-	p.InstructionSet.Init()
-	p.Define("jump",	func (o *OpCode)	{ p.Jump(o.a) })															//	JUMP	n
-	p.Define("call",	func (o *OpCode)	{ p.Call(o.a) })															//	CALL	n
-	p.Define("ret",		func (o *OpCode)	{ p.Return() })																//	RET
-	p.Define("cld",		func (o *OpCode)	{ p.R.Set(o.a, o.b) })														//	CLD		r, v
-	p.Define("inc",		func (o *OpCode)	{ p.R.Increment(o.a) })														//	INC		r
-	p.Define("dec",		func (o *OpCode)	{ p.R.Decrement(o.a) });													//	DEC		r
-	p.Define("cadd",	func (o *OpCode)	{ p.R.Add(o.a, o.b) });														//	CADD	r, v
-	p.Define("csub",	func (o *OpCode)	{ p.R.Subtract(o.a, o.b) });												//	CSUB	r, v
-	p.Define("cmul",	func (o *OpCode)	{ p.R.Multiply(o.a, o.b) });												//	CMUL	r, v
-	p.Define("cdiv",	func (o *OpCode)	{ p.R.Divide(o.a, o.b) });													//	CDIV	r, v
-	p.Define("cand",	func (o *OpCode)	{ p.R.And(o.a, o.b) });														//	CAND	r, v
-	p.Define("cor",		func (o *OpCode)	{ p.R.Or(o.a, o.b) });														//	COR		r, v
-	p.Define("cxor",	func (o *OpCode)	{ p.R.Xor(o.a, o.b) });														//	CXOR	r, v
-	p.Define("iadd",	func (o *OpCode)	{ p.R.Add(o.a, p.M.At(o.b)) })												//	IADD	r, m
-	p.Define("isub",	func (o *OpCode)	{ p.R.Subtract(o.a, p.M.At(o.b)) })											//	ISUB	r, m
-	p.Define("imul",	func (o *OpCode)	{ p.R.Multiply(o.a, p.M.At(o.b)) })											//	IMUL	r, m
-	p.Define("idiv",	func (o *OpCode)	{ p.R.Divide(o.a, p.M.At(o.b)) })											//	IDIV	r, m
-	p.Define("iand",	func (o *OpCode)	{ p.R.And(o.a, p.M.At(o.b)) })												//	IAND	r, m
-	p.Define("ior",		func (o *OpCode)	{ p.R.Or(o.a, p.M.At(o.b)) })												//	IOR		r, m
-	p.Define("ixor",	func (o *OpCode)	{ p.R.Xor(o.a, p.M.At(o.b)) })												//	IXOR	r, m
-//	p.Define("malloc",	func (o *OpCode)	{ p.R.PutBuffer(o.a, p.MMU.Allocate(o.b)) })								//	MALLOC	r, n
-//	p.Define("select",	func (o *OpCode)	{ p.M = p.R.GetBuffer(o.a) })												//	SELECT	r
+	if instructions == nil {
+		p.InstructionSet = new(InstructionSet)
+		p.InstructionSet.Init()
+		p.DefineInstructions()
+	} else {
+		p.InstructionSet = instructions
+	}
 	p.ResetState()
+}
+func (p *ProcessorCore) Clone() *ProcessorCore {
+	c := new(ProcessorCore)
+	c.Init(p.R.Len(), p.InstructionSet)
+	return c
+}
+func (p *ProcessorCore) DefineInstructions() {
+	p.Define("noop",	func (o *OpCode)	{})															//	NOOP
+	p.Define("jump",	func (o *OpCode)	{ p.Jump(o.a) })											//	JUMP	n
+	p.Define("call",	func (o *OpCode)	{ p.Call(o.a) })											//	CALL	n
+	p.Define("ret",		func (o *OpCode)	{ p.Return() })												//	RET
+	p.Define("cld",		func (o *OpCode)	{ p.R.Set(o.a, o.b) })										//	CLD		r, v
+	p.Define("inc",		func (o *OpCode)	{ p.R.Increment(o.a) })										//	INC		r
+	p.Define("dec",		func (o *OpCode)	{ p.R.Decrement(o.a) });									//	DEC		r
+	p.Define("cadd",	func (o *OpCode)	{ p.R.Add(o.a, o.b) });										//	CADD	r, v
+	p.Define("csub",	func (o *OpCode)	{ p.R.Subtract(o.a, o.b) });								//	CSUB	r, v
+	p.Define("cmul",	func (o *OpCode)	{ p.R.Multiply(o.a, o.b) });								//	CMUL	r, v
+	p.Define("cdiv",	func (o *OpCode)	{ p.R.Divide(o.a, o.b) });									//	CDIV	r, v
+	p.Define("cand",	func (o *OpCode)	{ p.R.And(o.a, o.b) });										//	CAND	r, v
+	p.Define("cor",		func (o *OpCode)	{ p.R.Or(o.a, o.b) });										//	COR		r, v
+	p.Define("cxor",	func (o *OpCode)	{ p.R.Xor(o.a, o.b) });										//	CXOR	r, v
+	p.Define("iadd",	func (o *OpCode)	{ p.R.Add(o.a, p.M.At(o.b)) })								//	IADD	r, m
+	p.Define("isub",	func (o *OpCode)	{ p.R.Subtract(o.a, p.M.At(o.b)) })							//	ISUB	r, m
+	p.Define("imul",	func (o *OpCode)	{ p.R.Multiply(o.a, p.M.At(o.b)) })							//	IMUL	r, m
+	p.Define("idiv",	func (o *OpCode)	{ p.R.Divide(o.a, p.M.At(o.b)) })							//	IDIV	r, m
+	p.Define("iand",	func (o *OpCode)	{ p.R.And(o.a, p.M.At(o.b)) })								//	IAND	r, m
+	p.Define("ior",		func (o *OpCode)	{ p.R.Or(o.a, p.M.At(o.b)) })								//	IOR		r, m
+	p.Define("ixor",	func (o *OpCode)	{ p.R.Xor(o.a, p.M.At(o.b)) })								//	IXOR	r, m
+//	p.Define("malloc",	func (o *OpCode)	{ p.R.PutBuffer(o.a, p.MMU.Allocate(o.b)) })				//	MALLOC	r, n
+//	p.Define("select",	func (o *OpCode)	{ p.M = p.R.GetBuffer(o.a) })								//	SELECT	r
 }
 func (p *ProcessorCore) ValidPC() bool {
 	return (p.PC < len(p.program)) && p.Running
@@ -131,7 +146,7 @@ func (p *ProcessorCore) Jump(ops int) {
 	p.PC += ops
 }
 func (p *ProcessorCore) Execute() {
-	if !p.InstructionSet.Invoke(p.I) {
+	if !p.Invoke(p.I) {
 		p.Running = false
 		p.Illegal_Operation = true
 	}

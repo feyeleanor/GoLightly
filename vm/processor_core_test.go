@@ -1,10 +1,12 @@
 //	TODO: 	Refactor tests as specs
+//	TODO:	Add tests for InstructionSet handling
+//	TODO:	Add tests for ProcessorCore cloning
 
 package vm
 import "testing"
 import "os"
 
-const BUFFER_ALLOCATION = 16
+const BUFFER_ALLOCATION = 32
 
 func defaultRegisterBlock() *RegisterBlock {
 	r := new(RegisterBlock)
@@ -70,7 +72,7 @@ func checkProcessorInitialised(p *ProcessorCore, t *testing.T) {
 func TestProcessorCoreCreation(t *testing.T) {
 	os.Stdout.WriteString("Processor Core Creation\n")
 	p := new(ProcessorCore)
-	p.Init(BUFFER_ALLOCATION)
+	p.Init(BUFFER_ALLOCATION, nil)
 	checkProcessorInitialised(p, t)
 }
 
@@ -87,7 +89,7 @@ func resetProcessor(p *ProcessorCore, t *testing.T) {
 func TestProcessorCoreExecution(t *testing.T) {
 	os.Stdout.WriteString("Processor Core Program Execution\n")
 	p := new(ProcessorCore)
-	p.Init(BUFFER_ALLOCATION)
+	p.Init(BUFFER_ALLOCATION, nil)
 	checkProcessorInitialised(p, t)
 	compareValues(p, t, p.ValidPC(), false)
 	program := defaultProgram()

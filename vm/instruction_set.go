@@ -12,7 +12,9 @@ type InstructionSet struct {
 }
 func (i *InstructionSet) Init() {
 	i.tokens = make(map[string]int)
-	i.Define("noop", func (o *OpCode) {})											//	NOOP
+}
+func (i *InstructionSet) Len() int {
+	return i.ops.Len()
 }
 func (i *InstructionSet) Define(name string, closure func (o *OpCode)) bool {
 	// Ensure instruction token hasn't yet been defined
@@ -23,11 +25,11 @@ func (i *InstructionSet) Define(name string, closure func (o *OpCode)) bool {
 	}
 	return false
 }
-func (i *InstructionSet) Find(name string) *func (o *OpCode) {
-	if op, error := i.tokens[name]; !error {
-		return i.ops.At(op).(*func (o *OpCode))
+func (i *InstructionSet) Find(name string) int {
+	if op, ok := i.tokens[name]; ok {
+		return op
 	}
-	return nil
+	return -1
 }
 func (i *InstructionSet) Invoke(o *OpCode) bool {
 	if o.code < 0 || o.code >= i.ops.Len() { return false }

@@ -38,12 +38,12 @@ func TestCreateBuffer(t *testing.T) {
 }
 
 func TestClone(t *testing.T) {
-	os.Stdout.WriteString("Cloning\n")
+	os.Stdout.WriteString("Buffer Cloning\n")
 	checkDefaultBuffer(defaultBuffer().Clone(), t)
 }
 
 func TestSlice(t *testing.T) {
-	os.Stdout.WriteString("Slicing\n")
+	os.Stdout.WriteString("Buffer Slicing\n")
 	b := defaultBuffer().Slice(1, 3)
 	compareValues(b, t, b.Len(), 2)
 	compareValues(b, t, b.Cap(), 2)
@@ -52,7 +52,7 @@ func TestSlice(t *testing.T) {
 }
 
 func TestMaths(t *testing.T) {
-	os.Stdout.WriteString("Maths\n")
+	os.Stdout.WriteString("Buffer Maths\n")
 	b := defaultBuffer()
 	b.Increment(0)
 	compareValues(b, t, b.At(0), 38)
@@ -75,7 +75,7 @@ func TestMaths(t *testing.T) {
 }
 
 func TestLogic(t *testing.T) {
-	os.Stdout.WriteString("Logic\n")
+	os.Stdout.WriteString("Buffer Logic\n")
 	b := defaultBuffer()
 	compareValues(b, t, b.LessThan(2, 3), false)
 	compareValues(b, t, b.Equals(2, 3), true)
