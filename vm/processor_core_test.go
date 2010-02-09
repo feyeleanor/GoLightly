@@ -77,7 +77,7 @@ func TestProcessorCoreCreation(t *testing.T) {
 }
 
 func checkInstruction(p *ProcessorCore, t *testing.T, program []*OpCode, pc int) {
-	compareValues(p, t, p.I.Equals(program[pc]), true)
+	compareValues(p, t, p.I.Identical(program[pc]), true)
 	compareValues(p, t, p.PC, pc)
 }
 

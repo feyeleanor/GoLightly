@@ -6,6 +6,19 @@ package vm
 
 import "container/vector"
 
+type OpCode struct {
+	code, a, b, c	int;
+}
+func (o *OpCode) Similar(p *OpCode) bool {
+	return o.code == p.code
+}
+func (o *OpCode) Identical(p *OpCode) bool {
+	return o.Similar(p) && o.a == p.a && o.b == p.b && o.c == p.c
+}
+func (o *OpCode) Replace(p *OpCode) {
+	o.code, o.a, o.b, o.c = p.code, p.a, p.b, p.c
+}
+
 type InstructionSet struct {
 	ops				vector.Vector
 	tokens			map[string]int
