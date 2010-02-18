@@ -54,11 +54,11 @@ func TestMMU(t *testing.T) {
 	checkAllocatedBuffer(b, t)
 }
 
-func defaultProgram() *[]*OpCode {
-	cld := &OpCode{code: 4, a: 0, b: 37}					//	cld		0, 37
-	inc := &OpCode{code: 5, a: 0}							//	inc		0
-	dec := &OpCode{code: 6, a: 0}							//	dec		0
-	ill := &OpCode{code: 99}								//	illegal operation
+func defaultProgram(p *ProcessorCore) *[]*OpCode {
+	cld := &OpCode{code: p.OpCode("cld"), a: 0, b: 37}				//	cld		0, 37
+	inc := &OpCode{code: p.OpCode("inc"), a: 0}						//	inc		0
+	dec := &OpCode{code: p.OpCode("dec"), a: 0}						//	dec		0
+	ill := &OpCode{code: 99}										//	illegal operation
 	return &[]*OpCode {cld, inc, inc, dec, inc, dec, dec, ill}
 }
 
@@ -93,7 +93,7 @@ func TestProcessorCoreExecution(t *testing.T) {
 	p.Init(BUFFER_ALLOCATION, nil)
 	checkProcessorInitialised(p, t)
 	compareValues(p, t, p.ValidPC(), false)
-	program := defaultProgram()
+	program := defaultProgram(p)
 	p.LoadProgram(program)
 	checkInstruction(p, t, *program, 0)
 	p.StepForward()
@@ -106,24 +106,24 @@ func TestProcessorCoreExecution(t *testing.T) {
 	compareValues(p, t, p.ValidPC(), false)
 	resetProcessor(p, t)
 	compareValues(p, t, p.ValidPC(), true)
-	compareValues(p, t, len(p.program), len(*defaultProgram()))
+	compareValues(p, t, len(p.program), len(*defaultProgram(p)))
 	p.LoadInstruction()
-	p.Execute()													//	program[0]
+	p.Execute()														//	program[0]
 	compareValues(p, t, p.R.At(0), 37)
 	p.StepForward()
 	p.Execute()
-	compareValues(p, t, p.R.At(0), 38)							//	program[1]
+	compareValues(p, t, p.R.At(0), 38)								//	program[1]
 	resetProcessor(p, t)
 	p.StepForward()
 	p.Execute()
-	compareValues(p, t, p.R.At(0), 1)							//	program[1]
+	compareValues(p, t, p.R.At(0), 1)								//	program[1]
 	resetProcessor(p, t)
-	p.Run()														//	program[7] is an illegal instruction
+	p.Run()															//	program[7] is an illegal instruction
 	compareValues(p, t, p.Running, false)
 	compareValues(p, t, p.Illegal_Operation, true)
-	compareValues(p, t, p.PC, len(p.program) - 1)				//	terminated without executing program[7]
+	compareValues(p, t, p.PC, len(p.program) - 1)					//	terminated without executing program[7]
 	compareValues(p, t, p.R.At(0), 37)
-	p.program[7] = &OpCode{code: 4, a: 1, b: 100}				//	replace program[7] with		cld	1, 100
+	p.program[7] = &OpCode{code: p.OpCode("cld"), a: 1, b: 100}		//	replace program[7] with		cld	1, 100
 	resetProcessor(p, t)
 	p.Run()
 	compareValues(p, t, p.Running, false)

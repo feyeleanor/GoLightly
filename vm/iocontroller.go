@@ -20,13 +20,20 @@ func (ioc *IOController) Open(c chan int) {
 }
 
 func (ioc *IOController) iterate(c chan<- int) {
-	for _, v := range *ioc { c <- v }
+	for _, v := range *ioc { c<- <-v }
 	close(c)
 }
 
 func (ioc *IOController) Iter() <-chan int {
 	c := make(chan int)
 	go ioc.iterate(c)
+	return c
+}
+
+func (ioc *IOController) Clone() *IOController {
+	c := new(IOController)
+	c.realloc(ioc.Len())
+	copy(*c, *ioc)
 	return c
 }
 
@@ -37,8 +44,7 @@ func (ioc *IOController) At(i int) chan int						{ return (*ioc)[i] }
 func (ioc *IOController) Set(i int, c chan int)					{ (*ioc)[i] = c }
 func (ioc *IOController) Close(i int)							{ close(ioc.At(i)) }
 func (ioc *IOController) CloseAll()								{ for i, _ := range *ioc { ioc.Close(i) } }
-func (ioc *IOController) Clone() *PortArray						{ return ioc.Slice(0, ioc.Len()) }
 func (ioc *IOController) Send(i, x int)							{ ioc.At(i) <- x }
-func (ioc *IOController) Receive(i int) int						{ <-ioc.At(i) }
-func (ioc *IOController) Copy(i, j int)							{ ioc.At(i) <- ioc.At(j) }
+func (ioc *IOController) Receive(i int) int						{ return <-ioc.At(i) }
+func (ioc *IOController) Copy(i, j int)							{ ioc.At(i)<- <-ioc.At(j) }
 func (ioc *IOController) Do(f func(elem interface{}))			{ for _, e := range *ioc { f(e) } }

@@ -38,7 +38,7 @@ func (i *InstructionSet) Define(name string, closure func (o *OpCode)) bool {
 	}
 	return false
 }
-func (i *InstructionSet) Find(name string) int {
+func (i *InstructionSet) OpCode(name string) int {
 	if op, ok := i.tokens[name]; ok {
 		return op
 	}

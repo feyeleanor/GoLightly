@@ -45,9 +45,9 @@ func checkInstructionInvocation(i *InstructionSet, t *testing.T) {
 }
 
 func checkInstructionSearch(i *InstructionSet, t *testing.T) {
-	compareValues(i, t, i.Find("zero"), 0)
-	compareValues(i, t, i.Find("two"), 2)
-	compareValues(i, t, i.Find("five"), -1)
+	compareValues(i, t, i.OpCode("zero"), 0)
+	compareValues(i, t, i.OpCode("two"), 2)
+	compareValues(i, t, i.OpCode("five"), -1)
 }
 
 func TestInstructionSetCreation(t *testing.T) {
