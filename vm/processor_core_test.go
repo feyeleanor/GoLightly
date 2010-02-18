@@ -1,6 +1,7 @@
 //	TODO: 	Refactor tests as specs
 //	TODO:	Add tests for InstructionSet handling
 //	TODO:	Add tests for ProcessorCore cloning
+//	TODO:	Add tests for IOController handling
 
 package vm
 import "testing"

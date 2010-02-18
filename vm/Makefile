@@ -4,7 +4,8 @@ TARG=feyeleanor/golightly/vm
 GOFILES=\
 	program.go\
 	instruction_set.go\
-	memory_buffer.go\
+	buffer.go\
+	iocontroller.go\
 	processor_core.go\
 
 include $(GOROOT)/src/Make.pkg

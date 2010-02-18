@@ -1,5 +1,6 @@
-//	TODO:	Add support for storing and retrieving pointers to memory buffers
-//	TODO:	ProcessorCore cloning should create a comms channel by which the parent and child cores can communicate
+//	TODO:	storing and retrieving pointers to memory buffers
+//	TODO:	cloning should create a comms channel by which the parent and child cores can communicate
+//	TODO:	should always have stdin, stdout and stderr channels
 
 package vm
 
@@ -55,12 +56,14 @@ type ProcessorCore struct {
 	ExecutionFlags
 	MMU
 	RegisterBlock
+	IOController
 	*InstructionSet
 	program			[]*OpCode
 	call_stack		vector.Vector
 }
 func (p *ProcessorCore) Init(registers int, instructions *InstructionSet) {
 	p.RegisterBlock.Allocate(registers)
+	p.IOController.Init()
 	if instructions == nil {
 		p.InstructionSet = new(InstructionSet)
 		p.InstructionSet.Init()
@@ -70,10 +73,15 @@ func (p *ProcessorCore) Init(registers int, instructions *InstructionSet) {
 	}
 	p.ResetState()
 }
-func (p *ProcessorCore) Clone() *ProcessorCore {
-	c := new(ProcessorCore)
-	c.Init(p.R.Len(), p.InstructionSet)
-	return c
+//	Make a copy of the current processor, binding it to the current processor with
+//	the supplied io channel
+func (p *ProcessorCore) Clone(c chan int) (q *ProcessorCore, i int) {
+	q := new(ProcessorCore)
+	q.Init(p.R.Len(), p.InstructionSet)
+	q.IOController.Open(c)
+	p.IOController.Open(c)
+	i := p.IOController.Len() - 1
+	return
 }
 func (p *ProcessorCore) DefineInstructions() {
 	p.Define("noop",	func (o *OpCode)	{})															//	NOOP
@@ -81,6 +89,9 @@ func (p *ProcessorCore) DefineInstructions() {
 	p.Define("call",	func (o *OpCode)	{ p.Call(o.a) })											//	CALL	n
 	p.Define("ret",		func (o *OpCode)	{ p.Return() })												//	RET
 	p.Define("cld",		func (o *OpCode)	{ p.R.Set(o.a, o.b) })										//	CLD		r, v
+	p.Define("csend",	func (o *OpCode)	{ p.IOController.Send(o.a, o.b) });							//	CSEND	c, v
+	p.Define("send",	func (o *OpCode)	{ p.IOController.Send(o.b, p.R.At(o.b)) });					//	SEND	c, r
+	p.Define("recv",	func (o *OpCode)	{ p.R.Set(o.a, p.IOController.Receive(o.b) });				//	RECV	r, c
 	p.Define("inc",		func (o *OpCode)	{ p.R.Increment(o.a) })										//	INC		r
 	p.Define("dec",		func (o *OpCode)	{ p.R.Decrement(o.a) });									//	DEC		r
 	p.Define("cadd",	func (o *OpCode)	{ p.R.Add(o.a, o.b) });										//	CADD	r, v
@@ -90,6 +101,8 @@ func (p *ProcessorCore) DefineInstructions() {
 	p.Define("cand",	func (o *OpCode)	{ p.R.And(o.a, o.b) });										//	CAND	r, v
 	p.Define("cor",		func (o *OpCode)	{ p.R.Or(o.a, o.b) });										//	COR		r, v
 	p.Define("cxor",	func (o *OpCode)	{ p.R.Xor(o.a, o.b) });										//	CXOR	r, v
+	p.Define("isend",	func (o *OpCode)	{ p.IOController.Send(o.b, p.M.At(o.b)) });					//	ISEND	c, m
+	p.Define("irecv",	func (o *OpCode)	{ p.M.Set(o.a, p.IOController.Receive(o.b) });				//	IRECV	m, c
 	p.Define("iadd",	func (o *OpCode)	{ p.R.Add(o.a, p.M.At(o.b)) })								//	IADD	r, m
 	p.Define("isub",	func (o *OpCode)	{ p.R.Subtract(o.a, p.M.At(o.b)) })							//	ISUB	r, m
 	p.Define("imul",	func (o *OpCode)	{ p.R.Multiply(o.a, p.M.At(o.b)) })							//	IMUL	r, m

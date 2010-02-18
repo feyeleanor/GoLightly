@@ -1,5 +1,7 @@
 //	TODO:	Storing and retrieving of pointers
+//	TODO:	Shouldn't support Extend or Expand
 //	TODO:	Stream support?
+//	TODO:	Interface?
 
 package vm
 
