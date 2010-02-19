@@ -38,11 +38,17 @@ func (i *InstructionSet) Define(name string, closure func (o *OpCode)) bool {
 	}
 	return false
 }
-func (i *InstructionSet) OpCode(name string) int {
+func (i *InstructionSet) Code(name string) int {
 	if op, ok := i.tokens[name]; ok {
 		return op
 	}
 	return -1
+}
+func (i *InstructionSet) OpCode(name string, a, b, c int) *OpCode {
+	if op := i.Code(name); op != -1 {
+		return &OpCode{code: op, a: a, b: b, c: c}
+	}
+	return nil
 }
 func (i *InstructionSet) Invoke(o *OpCode) bool {
 	if o.code < 0 || o.code >= i.ops.Len() { return false }

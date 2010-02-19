@@ -55,9 +55,9 @@ func TestMMU(t *testing.T) {
 }
 
 func defaultProgram(p *ProcessorCore) *[]*OpCode {
-	cld := &OpCode{code: p.OpCode("cld"), a: 0, b: 37}				//	cld		0, 37
-	inc := &OpCode{code: p.OpCode("inc"), a: 0}						//	inc		0
-	dec := &OpCode{code: p.OpCode("dec"), a: 0}						//	dec		0
+	cld := &OpCode{code: p.Code("cld"), a: 0, b: 37}				//	cld		0, 37
+	inc := &OpCode{code: p.Code("inc"), a: 0}						//	inc		0
+	dec := &OpCode{code: p.Code("dec"), a: 0}						//	dec		0
 	ill := &OpCode{code: 99}										//	illegal operation
 	return &[]*OpCode {cld, inc, inc, dec, inc, dec, dec, ill}
 }
@@ -87,14 +87,7 @@ func resetProcessor(p *ProcessorCore, t *testing.T) {
 	checkProcessorInitialised(p, t)
 }
 
-func TestProcessorCoreExecution(t *testing.T) {
-	os.Stdout.WriteString("Processor Core Program Execution\n")
-	p := new(ProcessorCore)
-	p.Init(BUFFER_ALLOCATION, nil)
-	checkProcessorInitialised(p, t)
-	compareValues(p, t, p.ValidPC(), false)
-	program := defaultProgram(p)
-	p.LoadProgram(program)
+func checkFlowControl(p *ProcessorCore, t *testing.T, program *[]*OpCode) {
 	checkInstruction(p, t, *program, 0)
 	p.StepForward()
 	checkInstruction(p, t, *program, 1)
@@ -106,6 +99,9 @@ func TestProcessorCoreExecution(t *testing.T) {
 	compareValues(p, t, p.ValidPC(), false)
 	resetProcessor(p, t)
 	compareValues(p, t, p.ValidPC(), true)
+}
+
+func checkProgramExecution(p *ProcessorCore, t *testing.T) {
 	compareValues(p, t, len(p.program), len(*defaultProgram(p)))
 	p.LoadInstruction()
 	p.Execute()														//	program[0]
@@ -123,12 +119,24 @@ func TestProcessorCoreExecution(t *testing.T) {
 	compareValues(p, t, p.Illegal_Operation, true)
 	compareValues(p, t, p.PC, len(p.program) - 1)					//	terminated without executing program[7]
 	compareValues(p, t, p.R.At(0), 37)
-	p.program[7] = &OpCode{code: p.OpCode("cld"), a: 1, b: 100}		//	replace program[7] with		cld	1, 100
+	p.program[7] = &OpCode{code: p.Code("cld"), a: 1, b: 100}		//	replace program[7] with		cld	1, 100
 	resetProcessor(p, t)
 	p.Run()
 	compareValues(p, t, p.Running, false)
 	compareValues(p, t, p.Illegal_Operation, false)
-	compareValues(p, t, p.PC, len(p.program))					//	terminated with all instructions executed
+	compareValues(p, t, p.PC, len(p.program))						//	terminated with all instructions executed
 	compareValues(p, t, p.R.At(0), 37)
 	compareValues(p, t, p.R.At(1), 100)
+}
+
+func TestProcessorCoreExecution(t *testing.T) {
+	os.Stdout.WriteString("Processor Core Program Execution\n")
+	p := new(ProcessorCore)
+	p.Init(BUFFER_ALLOCATION, nil)
+	checkProcessorInitialised(p, t)
+	compareValues(p, t, p.ValidPC(), false)
+	program := defaultProgram(p)
+	p.LoadProgram(program)
+	checkFlowControl(p, t, program)
+	checkProgramExecution(p, t)
 }

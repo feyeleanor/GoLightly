@@ -45,9 +45,17 @@ func checkInstructionInvocation(i *InstructionSet, t *testing.T) {
 }
 
 func checkInstructionSearch(i *InstructionSet, t *testing.T) {
-	compareValues(i, t, i.OpCode("zero"), 0)
-	compareValues(i, t, i.OpCode("two"), 2)
-	compareValues(i, t, i.OpCode("five"), -1)
+	compareValues(i, t, i.Code("zero"), 0)
+	compareValues(i, t, i.Code("two"), 2)
+	compareValues(i, t, i.Code("five"), -1)
+}
+
+func checkInstructionCompilation(i *InstructionSet, t *testing.T) {
+	zero, one := i.Code("zero"), i.Code("one")
+	compareValues(i, t, i.OpCode("zero", 0, 0, 0).Identical(&OpCode{code: zero}), true)
+	compareValues(i, t, i.OpCode("zero", 1, 0, 0).Identical(&OpCode{code: zero}), false)
+	compareValues(i, t, i.OpCode("one", 0, 0, 0).Similar(&OpCode{code: one, a: 1}), true)
+	compareValues(i, t, i.OpCode("zero", 1, 0, 0).Similar(&OpCode{code: one, a: 1}), false)
 }
 
 func TestInstructionSetCreation(t *testing.T) {
@@ -57,4 +65,5 @@ func TestInstructionSetCreation(t *testing.T) {
 	checkDefaultInstructionSet(i, t)
 	checkInstructionInvocation(i, t)
 	checkInstructionSearch(i, t)
+	checkInstructionCompilation(i, t)
 }

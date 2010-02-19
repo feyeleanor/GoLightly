@@ -1,6 +1,5 @@
 //	TODO:	Storing and retrieving of pointers
 //	TODO:	Shouldn't support Extend or Expand
-//	TODO:	Stream support?
 //	TODO:	Interface?
 
 package vm
@@ -35,13 +34,3 @@ func (b *Buffer) GreaterThanZero(i int) bool			{ return b.At(i) > 0 }
 func (b *Buffer) Copy(i, j int)							{ b.Set(i, b.At(j)) }
 func (b *Buffer) GetBuffer(i int) *Buffer				{ return (*Buffer)(unsafe.Pointer(uintptr(b.At(i)))) }
 func (b *Buffer) PutBuffer(i int, p *Buffer)			{ b.Set(i, int(uintptr(unsafe.Pointer(p)))) }
-
-//type Stream struct {
-//	Buffer
-//	index		int
-//}
-
-//func (b *Stream) Read(p []byte) (n int, err os.Error)	{ return 0, os.EOF }
-//func (b *Stream) Write(p []byte) (n int, err os.Error)	{ return 0, os.EOF }
-//func (b *Stream) Close() os.Error						{ return os.EOF }
-//func (b *Stream) Seek(offset int64, whence int) (ret int64, err os.Error)	{ return 0, os.EOF }

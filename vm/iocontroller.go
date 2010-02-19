@@ -1,6 +1,6 @@
 //	TODO:	check both synchronous and asynchronous channels are supported
-//	TODO:	Clone()
 //	TODO:	Read() and Write() interface support
+//	TODO:	write tests
 
 package vm
 
