@@ -1,3 +1,16 @@
 == About GoLightly ==
 
 GoLightly is a lightweight virtual machine implementation in Go, designed for flexibility and reuse.
+
+
+== Tests and Benchmarks ==
+
+GoLightly includes a test suite which can be invoked from the command-line as follows:
+
+	cd vm
+	gotest
+
+or to include the optional benchmarks:
+
+	cd vm
+	gotest -benchmarks="Benchmark"

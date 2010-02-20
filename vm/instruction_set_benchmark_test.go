@@ -4,7 +4,7 @@ import "fmt"
 //import "container/vector"
 
 func BenchmarkCreateOpCode(b *testing.B) {
-	op := new(OpCode)
+	var op *OpCode
 	for i := 0; i < b.N; i++ { op = new(OpCode) }
 	op.code = 1
 }
