@@ -21,25 +21,18 @@ func compareValues(object interface{}, t *testing.T, value, target_value interfa
 	if value != target_value { t.Errorf("%T: test %d -> expected %v, got %v", object, predicate_index, target_value, value) }
 }
 
-func checkDefaultBuffer(b *Buffer, t *testing.T) {
-	compareValues(b, t, b.Len(), 6)
-	compareValues(b, t, b.Cap(), 6)
-	compareValues(b, t, b.At(0), 37)
-	compareValues(b, t, b.At(1), int(byte("e"[0])))
-	compareValues(b, t, b.At(2), 3)
-	compareValues(b, t, b.At(3), 0)
-	compareValues(b, t, b.At(4), 0)
-	compareValues(b, t, b.At(5), 0)
+func checkDefaultBuffer(b *Buffer, t *testing.T, value bool) {
+	compareValues(b, t, b.Identical(defaultBuffer()), value)
 }
 
 func TestCreateBuffer(t *testing.T) {
 	os.Stdout.WriteString("Buffer Creation\n")
-	checkDefaultBuffer(defaultBuffer(), t)
+	checkDefaultBuffer(defaultBuffer(), t, true)
 }
 
 func TestClone(t *testing.T) {
 	os.Stdout.WriteString("Buffer Cloning\n")
-	checkDefaultBuffer(defaultBuffer().Clone(), t)
+	checkDefaultBuffer(defaultBuffer().Clone(), t, true)
 }
 
 func TestSlice(t *testing.T) {
@@ -77,6 +70,7 @@ func TestMaths(t *testing.T) {
 func TestLogic(t *testing.T) {
 	os.Stdout.WriteString("Buffer Logic\n")
 	b := defaultBuffer()
+	checkDefaultBuffer(b, t, true)
 	compareValues(b, t, b.LessThan(2, 3), false)
 	compareValues(b, t, b.Equals(2, 3), true)
 	compareValues(b, t, b.GreaterThan(2, 3), false)
@@ -84,6 +78,7 @@ func TestLogic(t *testing.T) {
 	compareValues(b, t, b.EqualsZero(2), false)
 	compareValues(b, t, b.GreaterThanZero(2), true)
 	b.Copy(1, 2)
+	checkDefaultBuffer(b, t, false)
 	compareValues(b, t, b.At(1), 3)
 	compareValues(b, t, b.LessThan(1, 3), false)
 	compareValues(b, t, b.Equals(1, 3), true)
@@ -92,6 +87,7 @@ func TestLogic(t *testing.T) {
 	compareValues(b, t, b.EqualsZero(1), false)
 	compareValues(b, t, b.GreaterThanZero(1), true)
 	b.Set(1, 0)
+	checkDefaultBuffer(b, t, false)
 	compareValues(b, t, b.LessThan(1, 3), true)
 	compareValues(b, t, b.Equals(1, 3), false)
 	compareValues(b, t, b.GreaterThan(1, 3), false)

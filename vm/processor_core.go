@@ -75,7 +75,7 @@ func (p *ProcessorCore) Init(registers int, instructions *InstructionSet) {
 }
 //	Make a copy of the current processor, binding it to the current processor with
 //	the supplied io channel
-func (p *ProcessorCore) Clone(c chan int) (q *ProcessorCore, i int) {
+func (p *ProcessorCore) Clone(c chan *Buffer) (q *ProcessorCore, i int) {
 	q = new(ProcessorCore)
 	q.Init(p.R.Len(), p.InstructionSet)
 	q.IOController.Open(c)
@@ -89,9 +89,8 @@ func (p *ProcessorCore) DefineInstructions() {
 	p.Define("call",	func (o *OpCode)	{ p.Call(o.a) })											//	CALL	n
 	p.Define("ret",		func (o *OpCode)	{ p.Return() })												//	RET
 	p.Define("cld",		func (o *OpCode)	{ p.R.Set(o.a, o.b) })										//	CLD		r, v
-	p.Define("csend",	func (o *OpCode)	{ p.IOController.Send(o.a, o.b) });							//	CSEND	c, v
-	p.Define("send",	func (o *OpCode)	{ p.IOController.Send(o.b, p.R.At(o.b)) });					//	SEND	c, r
-	p.Define("recv",	func (o *OpCode)	{ p.R.Set(o.a, p.IOController.Receive(o.b)) });				//	RECV	r, c
+	p.Define("send",	func (o *OpCode)	{ p.IOController.Send(o.b, p.M) });							//	SEND	c
+	p.Define("recv",	func (o *OpCode)	{ p.M = p.IOController.Receive(o.a) });						//	RECV	c
 	p.Define("inc",		func (o *OpCode)	{ p.R.Increment(o.a) })										//	INC		r
 	p.Define("dec",		func (o *OpCode)	{ p.R.Decrement(o.a) });									//	DEC		r
 	p.Define("cadd",	func (o *OpCode)	{ p.R.Add(o.a, o.b) });										//	CADD	r, v
@@ -101,8 +100,6 @@ func (p *ProcessorCore) DefineInstructions() {
 	p.Define("cand",	func (o *OpCode)	{ p.R.And(o.a, o.b) });										//	CAND	r, v
 	p.Define("cor",		func (o *OpCode)	{ p.R.Or(o.a, o.b) });										//	COR		r, v
 	p.Define("cxor",	func (o *OpCode)	{ p.R.Xor(o.a, o.b) });										//	CXOR	r, v
-	p.Define("isend",	func (o *OpCode)	{ p.IOController.Send(o.b, p.M.At(o.b)) });					//	ISEND	c, m
-	p.Define("irecv",	func (o *OpCode)	{ p.M.Set(o.a, p.IOController.Receive(o.b)) });				//	IRECV	m, c
 	p.Define("iadd",	func (o *OpCode)	{ p.R.Add(o.a, p.M.At(o.b)) })								//	IADD	r, m
 	p.Define("isub",	func (o *OpCode)	{ p.R.Subtract(o.a, p.M.At(o.b)) })							//	ISUB	r, m
 	p.Define("imul",	func (o *OpCode)	{ p.R.Multiply(o.a, p.M.At(o.b)) })							//	IMUL	r, m
