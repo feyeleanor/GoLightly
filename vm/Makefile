@@ -5,6 +5,7 @@ GOFILES=\
 	program.go\
 	instruction_set.go\
 	buffer.go\
+	stream.go\
 	iocontroller.go\
 	processor_core.go\
 

@@ -7,6 +7,9 @@ package vm
 import . "container/vector"
 import "unsafe"
 
+func max(x, y int) int									{ if x > y { return x}; return y }
+func min(x, y int) int									{ if x < y { return x}; return y }
+
 type Buffer struct {
 	IntVector
 }
@@ -28,21 +31,26 @@ func (b *Buffer) Replace(o *Buffer) {
 	copy(a, o.Data())
 }
 
-func (b *Buffer) Add(i, x int)							{ b.Set(i, b.At(i) + x) }
-func (b *Buffer) Subtract(i, x int)						{ b.Set(i, b.At(i) - x) }
-func (b *Buffer) Multiply(i, x int)						{ b.Set(i, b.At(i) * x) }
-func (b *Buffer) Divide(i, x int)						{ b.Set(i, b.At(i) / x) }
-func (b *Buffer) And(i, x int)							{ b.Set(i, b.At(i) & x) }
-func (b *Buffer) Or(i, x int)							{ b.Set(i, b.At(i) | x) }
-func (b *Buffer) Xor(i, x int)							{ b.Set(i, b.At(i) ^ x) }
-func (b *Buffer) Increment(i int)						{ b.Add(i, 1) }
-func (b *Buffer) Decrement(i int)						{ b.Subtract(i, 1) }
-func (b *Buffer) Equals(i, x int) bool					{ return b.At(i) == x }
-func (b *Buffer) EqualsZero(i int) bool					{ return b.At(i) == 0 }
-func (b *Buffer) LessThan(i, x int) bool				{ return b.At(i) < x }
-func (b *Buffer) LessThanZero(i int) bool				{ return b.At(i) < 0 }
-func (b *Buffer) GreaterThan(i, x int) bool				{ return b.At(i) > x }
-func (b *Buffer) GreaterThanZero(i int) bool			{ return b.At(i) > 0 }
-func (b *Buffer) Copy(i, j int)							{ b.Set(i, b.At(j)) }
+func (b *Buffer) Add(i, j int)							{ a := b.IntVector; a[i] += a[j] }
+func (b *Buffer) Subtract(i, j int)						{ a := b.IntVector; a[i] -= a[j] }
+func (b *Buffer) Multiply(i, j int)						{ a := b.IntVector; a[i] *= a[j] }
+func (b *Buffer) Divide(i, j int)						{ a := b.IntVector; a[i] /= a[j] }
+func (b *Buffer) And(i, j int)							{ a := b.IntVector; a[i] &= a[j] }
+func (b *Buffer) Or(i, j int)							{ a := b.IntVector; a[i] |= a[j] }
+func (b *Buffer) Xor(i, j int)							{ a := b.IntVector; a[i] ^= a[j] }
+func (b *Buffer) Increment(i int)						{ a := b.IntVector; a[i] += 1 }
+func (b *Buffer) Decrement(i int)						{ a := b.IntVector; a[i] -= 1 }
+func (b *Buffer) Negate(i int)							{ a := b.IntVector; a[i] = -a[i] }
+func (b *Buffer) ShiftLeft(i, j int)					{ a := b.IntVector; a[i] >>= uint(a[j]) }
+func (b *Buffer) ShiftRight(i, j int)					{ a := b.IntVector; a[i] <<= uint(a[j]) }
+func (b *Buffer) Invert(i int)							{ a := b.IntVector; a[i] = ^a[i] }
+func (b *Buffer) Equals(i, j int) bool					{ a := b.IntVector; return a[i] == a[j] }
+func (b *Buffer) EqualsZero(i int) bool					{ a := b.IntVector; return a[i] == 0 }
+func (b *Buffer) LessThan(i, j int) bool				{ a := b.IntVector; return a[i] < a[j] }
+func (b *Buffer) LessThanZero(i int) bool				{ a := b.IntVector; return a[i] < 0 }
+func (b *Buffer) GreaterThan(i, j int) bool				{ a := b.IntVector; return a[i] > a[j] }
+func (b *Buffer) GreaterThanZero(i int) bool			{ a := b.IntVector; return a[i] > 0 }
+func (b *Buffer) Copy(i, j int)							{ a := b.IntVector; a[i] = a[j] }
+
 func (b *Buffer) GetBuffer(i int) *Buffer				{ return (*Buffer)(unsafe.Pointer(uintptr(b.At(i)))) }
 func (b *Buffer) PutBuffer(i int, p *Buffer)			{ b.Set(i, int(uintptr(unsafe.Pointer(p)))) }

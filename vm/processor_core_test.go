@@ -15,14 +15,14 @@ func defaultRegisterBlock() *RegisterBlock {
 	return r
 }
 
-func checkAllocatedBuffer(b *Buffer, t *testing.T) {
-	compareValues(b, t, b.Len(), BUFFER_ALLOCATION)
-	compareValues(b, t, b.Cap(), BUFFER_ALLOCATION)
-	for i := 0; i < b.Len(); i++ { compareValues(b, t, b.At(i), 0) }
+func checkAllocatedStream(s *Stream, t *testing.T) {
+	compareValues(s, t, s.Len(), BUFFER_ALLOCATION)
+	compareValues(s, t, s.Cap(), BUFFER_ALLOCATION)
+	for i := 0; i < s.Len(); i++ { compareValues(s, t, s.At(i), 0) }
 }
 
 func checkDefaultRegisterBlock(r *RegisterBlock, t *testing.T) {
-	checkAllocatedBuffer(r.R, t)
+	checkAllocatedStream(r.R, t)
 	compareValues(r, t, r.M == nil, true)
 	compareValues(r, t, r.I == nil, true)
 	compareValues(r, t, r.PC, 0)
@@ -37,7 +37,7 @@ func TestRegisterBlock(t *testing.T) {
 	checkDefaultRegisterBlock(c, t)
 	os.Stdout.WriteString("Register Block Replacement\n")
 	r.PC = 27
-	r.M = new(Buffer)
+	r.M = new(Stream)
 	r.M.Init(48)
 	compareValues(r, t, r.PC, 27)
 	compareValues(r, t, r.M.Cap(), 48)
@@ -50,20 +50,34 @@ func TestRegisterBlock(t *testing.T) {
 func TestMMU(t *testing.T) {
 	os.Stdout.WriteString("MMU Allocation\n")
 	m := new(MMU)
-	b := m.Allocate(BUFFER_ALLOCATION)
-	checkAllocatedBuffer(b, t)
+	s := m.Allocate(BUFFER_ALLOCATION)
+	checkAllocatedStream(s, t)
 }
 
 func defaultProgram(p *ProcessorCore) *[]*OpCode {
-	cld := &OpCode{code: p.Code("cld"), a: 0, b: 37}				//	cld		0, 37
-	inc := &OpCode{code: p.Code("inc"), a: 0}						//	inc		0
-	dec := &OpCode{code: p.Code("dec"), a: 0}						//	dec		0
+	cld := p.OpCode("cld", 0, 37, 0)								//	cld		0, 37
+	inc := p.OpCode("inc", 0, 0, 0)									//	inc		0
+	dec := p.OpCode("dec", 0, 0, 0)									//	dec		0
 	ill := &OpCode{code: 99}										//	illegal operation
 	return &[]*OpCode {cld, inc, inc, dec, inc, dec, dec, ill}
 }
 
+func advancedProgram(p *ProcessorCore) *[]*OpCode {
+	return &[]*OpCode{
+		p.OpCode("cld",		0,	1000,	0),			//	0	cld		R0, 1000
+		p.OpCode("call",	5,	0,		0),			//	1	call	5
+		p.OpCode("dec",		0,	0,		0),			//	2	dec		R0
+		p.OpCode("jmpnz",	0,	-2,		0),			//	3	jmpnz	R0, -2
+		p.OpCode("halt",	0,	0,		0),			//	4	halt
+		p.OpCode("push",	0,	0,		0),			//	5	push	R0
+		p.OpCode("inc",		1,	0,		0),			//	6	inc		R1
+		p.OpCode("pop",		0,	0,		0),			//	7	pop		R0
+		p.OpCode("ret",		0,	0,		0),			//	8	ret
+	}
+}
+
 func checkProcessorInitialised(p *ProcessorCore, t *testing.T) {
-	checkAllocatedBuffer(p.R, t)
+	checkAllocatedStream(p.R, t)
 	compareValues(p, t, p.Running, true)
 	compareValues(p, t, p.PC, 0)
 	compareValues(p, t, p.I == nil, true)
@@ -95,7 +109,7 @@ func checkFlowControl(p *ProcessorCore, t *testing.T, program *[]*OpCode) {
 	checkInstruction(p, t, *program, 0)
 	p.StepForward()
 	checkInstruction(p, t, *program, 1)
-	p.Jump(len(*program))
+	p.JumpTo(len(*program))
 	compareValues(p, t, p.ValidPC(), false)
 	resetProcessor(p, t)
 	compareValues(p, t, p.ValidPC(), true)
@@ -139,4 +153,8 @@ func TestProcessorCoreExecution(t *testing.T) {
 	p.LoadProgram(program)
 	checkFlowControl(p, t, program)
 	checkProgramExecution(p, t)
+	p.LoadProgram(advancedProgram(p))
+	p.Run()
+	compareValues(p, t, p.R.At(0), 0)
+	compareValues(p, t, p.R.At(1), 1000)
 }

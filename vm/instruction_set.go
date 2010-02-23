@@ -5,6 +5,7 @@
 package vm
 
 import "container/vector"
+import "fmt"
 
 type OpCode struct {
 	code, a, b, c	int;
@@ -17,6 +18,9 @@ func (o *OpCode) Identical(p *OpCode) bool {
 }
 func (o *OpCode) Replace(p *OpCode) {
 	o.code, o.a, o.b, o.c = p.code, p.a, p.b, p.c
+}
+func (o *OpCode) String() string {
+	return fmt.Sprintf("%v %v, %v, %v", o.code, o.a, o.b, o.c)
 }
 
 type InstructionSet struct {

@@ -2,12 +2,12 @@ package vm
 import "testing"
 import "os"
 
-func defaultSynchronousChannel() chan *Buffer {
-	return make(chan *Buffer)
+func defaultSynchronousChannel() chan *Stream {
+	return make(chan *Stream)
 }
 
-func defaultAsynchronousChannel() chan *Buffer {
-	return make(chan *Buffer, 256)
+func defaultAsynchronousChannel() chan *Stream {
+	return make(chan *Stream, 256)
 }
 
 func defaultIOController() *IOController {
@@ -39,6 +39,6 @@ func TestCreateIOController(t *testing.T) {
 func TestIOControllerTraffic(t *testing.T) {
 	os.Stdout.WriteString("IOController Traffic\n")
 	i := defaultIOController()
-	i.Send(0, defaultBuffer())
-	checkDefaultBuffer(i.Receive(0), t, true)
+	i.Send(0, defaultStream())
+	checkDefaultStream(i.Receive(0), t, true)
 }
