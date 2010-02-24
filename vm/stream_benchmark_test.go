@@ -2,6 +2,14 @@ package vm
 import "testing"
 //import "container/vector"
 
+func twoElementStream() *Stream {
+	s := new(Stream)
+	s.Init(2)
+	s.Buffer.Set(0, 100)
+	s.Buffer.Set(1, 200)
+	return s
+}
+
 func BenchmarkStreamAt(b *testing.B) {
     b.StopTimer()
 	s := defaultStream()
@@ -31,6 +39,14 @@ func BenchmarkStreamAdd(b *testing.B) {
 	for i := 0; i < b.N; i++ { s1.Add(s2) }
 }
 
+func BenchmarkStreamAdd2(b *testing.B) {
+	b.StopTimer()
+	s1 := twoElementStream()
+	s2 := twoElementStream()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ { s1.Add(s2) }
+}
+
 func BenchmarkStreamBufferSubtract(b *testing.B) {
 	b.StopTimer()
 	s := defaultStream()
@@ -46,6 +62,14 @@ func BenchmarkStreamSubtract(b *testing.B) {
 	for i := 0; i < b.N; i++ { s1.Subtract(s2) }
 }
 
+func BenchmarkStreamSubtract2(b *testing.B) {
+	b.StopTimer()
+	s1 := twoElementStream()
+	s2 := twoElementStream()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ { s1.Subtract(s2) }
+}
+
 func BenchmarkStreamBufferMultiply(b *testing.B) {
 	b.StopTimer()
 	s := defaultStream()
@@ -57,6 +81,14 @@ func BenchmarkStreamMultiply(b *testing.B) {
 	b.StopTimer()
 	s1 := defaultStream()
 	s2 := defaultStream()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ { s1.Multiply(s2) }
+}
+
+func BenchmarkStreamMultiply2(b *testing.B) {
+	b.StopTimer()
+	s1 := twoElementStream()
+	s2 := twoElementStream()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ { s1.Multiply(s2) }
 }
@@ -78,6 +110,15 @@ func BenchmarkStreamDivide(b *testing.B) {
 	for i := 0; i < b.N; i++ { s1.Divide(s2) }
 }
 
+func BenchmarkStreamDivide2(b *testing.B) {
+	b.StopTimer()
+	s1 := twoElementStream()
+	s1.Set(0, 987654321)
+	s2 := twoElementStream()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ { s1.Divide(s2) }
+}
+
 func BenchmarkStreamBufferIncrement(b *testing.B) {
 	b.StopTimer()
 	s := defaultStream()
@@ -88,6 +129,13 @@ func BenchmarkStreamBufferIncrement(b *testing.B) {
 func BenchmarkStreamIncrement(b *testing.B) {
 	b.StopTimer()
 	s := defaultStream()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ { s.Increment() }
+}
+
+func BenchmarkStreamIncrement2(b *testing.B) {
+	b.StopTimer()
+	s := twoElementStream()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ { s.Increment() }
 }
@@ -106,6 +154,13 @@ func BenchmarkStreamDecrement(b *testing.B) {
 	for i := 0; i < b.N; i++ { s.Decrement() }
 }
 
+func BenchmarkStreamDecrement2(b *testing.B) {
+	b.StopTimer()
+	s := twoElementStream()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ { s.Decrement() }
+}
+
 func BenchmarkStreamBufferNegate(b *testing.B) {
 	b.StopTimer()
 	s := defaultStream()
@@ -116,6 +171,13 @@ func BenchmarkStreamBufferNegate(b *testing.B) {
 func BenchmarkStreamNegate(b *testing.B) {
 	b.StopTimer()
 	s := defaultStream()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ { s.Negate() }
+}
+
+func BenchmarkStreamNegate2(b *testing.B) {
+	b.StopTimer()
+	s := twoElementStream()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ { s.Negate() }
 }
@@ -135,6 +197,14 @@ func BenchmarkStreamShiftLeft(b *testing.B) {
 	for i := 0; i < b.N; i++ { s1.ShiftLeft(s2) }
 }
 
+func BenchmarkStreamShiftLeft2(b *testing.B) {
+	b.StopTimer()
+	s1 := twoElementStream()
+	s2 := twoElementStream()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ { s1.ShiftLeft(s2) }
+}
+
 func BenchmarkStreamBufferShiftRight(b *testing.B) {
 	b.StopTimer()
 	s := defaultStream()
@@ -150,6 +220,14 @@ func BenchmarkStreamShiftRight(b *testing.B) {
 	for i := 0; i < b.N; i++ { s1.ShiftRight(s2) }
 }
 
+func BenchmarkStreamShiftRight2(b *testing.B) {
+	b.StopTimer()
+	s1 := twoElementStream()
+	s2 := twoElementStream()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ { s1.ShiftRight(s2) }
+}
+
 func BenchmarkStreamBufferInvert(b *testing.B) {
 	b.StopTimer()
 	s := defaultStream()
@@ -160,6 +238,13 @@ func BenchmarkStreamBufferInvert(b *testing.B) {
 func BenchmarkStreamInvert(b *testing.B) {
 	b.StopTimer()
 	s := defaultStream()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ { s.Invert() }
+}
+
+func BenchmarkStreamInvert2(b *testing.B) {
+	b.StopTimer()
+	s := twoElementStream()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ { s.Invert() }
 }

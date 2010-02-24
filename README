@@ -1,6 +1,33 @@
 == About GoLightly ==
 
 GoLightly is a lightweight virtual machine implementation in Go, designed for flexibility and reuse.
+Traditionally popular VMs have adopted a stack-based design as this is perceived to be easier to
+implement than the register-based design that real-world hardware generally uses. There are arguments
+both ways on which of the two approaches is 'better' and it's not our intention to mandate either: a
+good VM toolkit should leave that decision to those who know which suits their purpose best.
+
+However just because GoLightly adopts a careful neutrality on this issue doesn't mean that it has
+nothing fresh to offer.
+
+Firstly GoLightly provides support for vector instructions allowing each virtual processor to handle
+large data sets more efficiently than in traditional VM designs. Not only is this a boon for fast
+maths, it also allows complex data structures to be transferred between virtual processors with only
+a couple of instructions.
+
+And speaking of multiple virtual processors, once a processor has been initialised it can be cloned
+with a single instruction and both processors are hooked together with a communications channel.
+
+Each processor has its own dynamic instruction definition and dispatch mechanism providing a flexible
+model during development. However function-based dynamic dispatch is more expensive than the
+switch-based dispatch used in traditional VM designs so the latter is also supported via type
+embedding of the ProcessorCore and method hiding of InlinedInstructions().
+
+One interesting consequence of making each virtual processor configurable in this manner is that it
+allows complex problems to be modelled in terms of several different processors running relatively
+simple programs and arranged in a pipeline.
+
+Likewise the ability to clone virtual processors can be used as a building block for transactional
+and speculative execution.
 
 
 == Tests and Benchmarks ==
@@ -14,3 +41,7 @@ or to include the optional benchmarks:
 
 	cd vm
 	gotest -benchmarks="Benchmark"
+
+these include extensive micro-benchmarks focusing on individual primitive operation performance which
+will hopefully act as a useful guide to relative performance for those writing compilers or assemblers
+targeting GoLightly virtual machines.
