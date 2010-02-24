@@ -6,6 +6,7 @@ package vm
 
 import . "container/vector"
 import "unsafe"
+import "math"
 
 func max(x, y int) int									{ if x > y { return x}; return y }
 func min(x, y int) int									{ if x < y { return x}; return y }
@@ -51,6 +52,10 @@ func (b *Buffer) LessThanZero(i int) bool				{ a := b.IntVector; return a[i] < 0
 func (b *Buffer) GreaterThan(i, j int) bool				{ a := b.IntVector; return a[i] > a[j] }
 func (b *Buffer) GreaterThanZero(i int) bool			{ a := b.IntVector; return a[i] > 0 }
 func (b *Buffer) Copy(i, j int)							{ a := b.IntVector; a[i] = a[j] }
+
+//func (b *Buffer) FloatAt(i int) float					{ a := b.IntVector; return *(*float)(unsafe.Pointer(&a[i])) }
+func (b *Buffer) FloatAt(i int) float32					{ return math.Float32frombits(uint32(b.IntVector[i])) }
+//func (b *Buffer) FloatSet(i int, f float)				{  }
 
 func (b *Buffer) GetBuffer(i int) *Buffer				{ return (*Buffer)(unsafe.Pointer(uintptr(b.At(i)))) }
 func (b *Buffer) PutBuffer(i int, p *Buffer)			{ b.Set(i, int(uintptr(unsafe.Pointer(p)))) }
