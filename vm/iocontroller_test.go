@@ -39,6 +39,6 @@ func TestCreateIOController(t *testing.T) {
 func TestIOControllerTraffic(t *testing.T) {
 	os.Stdout.WriteString("IOController Traffic\n")
 	i := defaultIOController()
-	i.Send(0, defaultStream())
-	checkDefaultStream(i.Receive(0), t, true)
+	i.Send(0, sixIntegerStream())
+	checkStream(i.Receive(0), sixIntegerStream(), t, true)
 }

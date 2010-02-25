@@ -4,6 +4,10 @@
 
 package vm
 
+import "unsafe"
+//import "os"
+//import "fmt"
+
 type Stream struct {
 	Buffer
 }
@@ -51,6 +55,54 @@ func (s *Stream) Divide(offset int, o *Stream) {
 		limit = len(o.Buffer) + offset
 	}
 	for i := 0; i < limit; i++ { s.Buffer[i + offset] /= o.Buffer[i] }
+}
+
+func (s *Stream) FAdd(offset int, o *Stream) {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	sfb := *(*[]float)(unsafe.Pointer(&s.Buffer))
+	ofb := *(*[]float)(unsafe.Pointer(&o.Buffer))
+	for i := 0; i < limit; i++ { sfb[i + offset] += ofb[i] }
+}
+
+func (s *Stream) FSubtract(offset int, o *Stream) {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	sfb := *(*[]float)(unsafe.Pointer(&s.Buffer))
+	ofb := *(*[]float)(unsafe.Pointer(&o.Buffer))
+	for i := 0; i < limit; i++ { sfb[i + offset] -= ofb[i] }
+}
+
+func (s *Stream) FMultiply(offset int, o *Stream) {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	sfb := *(*[]float)(unsafe.Pointer(&s.Buffer))
+	ofb := *(*[]float)(unsafe.Pointer(&o.Buffer))
+	for i := 0; i < limit; i++ { sfb[i + offset] *= ofb[i] }
+}
+
+func (s *Stream) FDivide(offset int, o *Stream) {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	sfb := *(*[]float)(unsafe.Pointer(&s.Buffer))
+	ofb := *(*[]float)(unsafe.Pointer(&o.Buffer))
+	for i := 0; i < limit; i++ { sfb[i + offset] /= ofb[i] }
 }
 
 func (s *Stream) And(offset int, o *Stream) {

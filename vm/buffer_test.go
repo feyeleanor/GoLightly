@@ -3,12 +3,12 @@
 package vm
 import "testing"
 import "os"
-import "unsafe"
+//import "unsafe"
 import "math"
 
 var predicate_index int
 
-func defaultBuffer() *Buffer {
+func sixIntegerBuffer() *Buffer {
 	b := new(Buffer)
 	b.Init(6)
 	b.Set(0, 37)
@@ -21,44 +21,53 @@ func defaultBuffer() *Buffer {
 	return b
 }
 
+func sixFloatBuffer() *Buffer {
+	b := new(Buffer)
+	b.Init(6)
+	b.FSet(0, 37.0)
+	b.FSet(1, float("e"[0]))
+	b.FSet(2, 3.7)
+	b.FSet(3, 5.0)
+	b.FSet(4, 2.0)
+	b.FSet(5, 2.0)
+	return b
+}
+
 func compareValues(object interface{}, t *testing.T, value, target_value interface{}) {
 	predicate_index += 1
 	if value != target_value { t.Errorf("%T: test %d -> expected %v, got %v", object, predicate_index, target_value, value) }
 }
 
-func checkDefaultBuffer(b *Buffer, t *testing.T, value bool) {
-	compareValues(b, t, b.Identical(defaultBuffer()), value)
+func compareFloatValues(object interface{}, t *testing.T, value, target_value, tolerance float) {
+	compareValues(object, t, math.Fabs(float64(value - target_value)) < float64(tolerance), true)
+}
+
+func checkBuffer(b, o *Buffer, t *testing.T, value bool) {
+	compareValues(b, t, b.Identical(o), value)
 }
 
 func TestCreateBuffer(t *testing.T) {
 	os.Stdout.WriteString("Buffer Creation\n")
-	checkDefaultBuffer(defaultBuffer(), t, true)
+	checkBuffer(sixIntegerBuffer(), sixIntegerBuffer(), t, true)
 }
 
 func TestClone(t *testing.T) {
 	os.Stdout.WriteString("Buffer Cloning\n")
-	checkDefaultBuffer(defaultBuffer().Clone(), t, true)
+	checkBuffer(sixIntegerBuffer().Clone(), sixIntegerBuffer(), t, true)
 }
 
 func TestSlice(t *testing.T) {
 	os.Stdout.WriteString("Buffer Slicing\n")
-	b := defaultBuffer().Slice(1, 3)
+	b := sixIntegerBuffer().Slice(1, 3)
 	compareValues(b, t, b.Len(), 2)
 //	compareValues(b, t, b.Cap(), 2)
 //	compareValues(b, t, b.At(0), int(byte("e"[0])))
 //	compareValues(b, t, b.At(1), 3)
 }
 
-func floatBuffer() []float {
-	return []float{1.0, 2.0, 3.0, 4.5, 5.4, 6.0, 7.0, 8.0, 9.0, 10.0}
-}
-
-func intsToFloats(i []int) []float { return *(*[]float)(unsafe.Pointer(&i)) }
-func floatsToInts(f []float) []int { return *(*[]int)(unsafe.Pointer(&f)) }
-
 func TestMaths(t *testing.T) {
 	os.Stdout.WriteString("Buffer Maths\n")
-	b := defaultBuffer()
+	b := sixIntegerBuffer()
 	b.Increment(0)											//	b[0] == 38
 	compareValues(b, t, b.At(0), 38)
 	b.Decrement(0)											//	b[0] == 37
@@ -87,18 +96,18 @@ func TestMaths(t *testing.T) {
 	compareValues(b, t, b.FAt(0), 3.719)
 	compareValues(b, t, b.FAt(1), 11.9)
 	b.FAdd(0, 1)
-	compareValues(b, t, math.Fabs(float64(b.FAt(0) - 15.619)) < 0.001, true)
+	compareFloatValues(b, t, b.FAt(0), 15.619, 0.001)
 	b.FSubtract(0, 1)
-	compareValues(b, t, math.Fabs(float64(b.FAt(0) - 3.719)) < 0.001, true)
+	compareFloatValues(b, t, b.FAt(0), 3.719, 0.001)
 	b.FMultiply(0, 1)
-	compareValues(b, t, math.Fabs(float64(b.FAt(0) - 44.2561)) < 0.001, true)
+	compareFloatValues(b, t, b.FAt(0), 44.2561, 0.001)
 	b.FDivide(0, 1)
-	compareValues(b, t, math.Fabs(float64(b.FAt(0) - 3.719)) < 0.001, true)
+	compareFloatValues(b, t, b.FAt(0), 3.719, 0.001)
 }
 
 func TestBitOperators(t *testing.T) {
 	os.Stdout.WriteString("Buffer Bit Manipulation\n")
-	b := defaultBuffer()									//	b[0] == 37, b[5] == 2
+	b := sixIntegerBuffer()									//	b[0] == 37, b[5] == 2
 	b.ShiftRight(0, 5)
 	compareValues(b, t, b.At(0), 148)
 	b.ShiftLeft(0, 5)
@@ -109,8 +118,8 @@ func TestBitOperators(t *testing.T) {
 
 func TestLogic(t *testing.T) {
 	os.Stdout.WriteString("Buffer Logic\n")
-	b := defaultBuffer()
-	checkDefaultBuffer(b, t, true)
+	b := sixIntegerBuffer()
+	checkBuffer(b, sixIntegerBuffer(), t, true)
 	compareValues(b, t, b.LessThan(2, 3), true)				//	b[2] == 3, b[3] == 5
 	compareValues(b, t, b.Equals(2, 3), false)
 	compareValues(b, t, b.GreaterThan(2, 3), false)
@@ -118,7 +127,7 @@ func TestLogic(t *testing.T) {
 	compareValues(b, t, b.EqualsZero(2), false)
 	compareValues(b, t, b.GreaterThanZero(2), true)
 	b.Copy(1, 2)											//	b[1] == 3
-	checkDefaultBuffer(b, t, false)
+	checkBuffer(b, sixIntegerBuffer(), t, false)
 	compareValues(b, t, b.At(1), 3)
 	compareValues(b, t, b.LessThan(1, 3), true)				//	b[1] == 3, b[3] == 5
 	compareValues(b, t, b.Equals(1, 2), true)				//	b[1] == 3, b[2] == 3
@@ -127,7 +136,7 @@ func TestLogic(t *testing.T) {
 	compareValues(b, t, b.EqualsZero(1), false)
 	compareValues(b, t, b.GreaterThanZero(1), true)
 	b.Set(1, 0)												//	b[1] == 0, b[3] == 5
-	checkDefaultBuffer(b, t, false)
+	checkBuffer(b, sixIntegerBuffer(), t, false)
 	compareValues(b, t, b.LessThan(1, 3), true)
 	compareValues(b, t, b.Equals(1, 3), false)
 	compareValues(b, t, b.GreaterThan(1, 3), false)
