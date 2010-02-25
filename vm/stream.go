@@ -4,154 +4,240 @@
 
 package vm
 
-//import . "container/vector"
-//import "unsafe"
-
 type Stream struct {
 	Buffer
 }
 
-func (s *Stream) Init(length int)						{ s.Buffer.Init(length) }
-func (s *Stream) Clear()								{ s.Buffer.Clear() }
 func (s *Stream) Slice(i, j int) *Stream				{ return &Stream{*s.Buffer.Slice(i, j)} }
 func (s *Stream) Clone() *Stream						{ return s.Slice(0, s.Len()) }
+func (s *Stream) Identical(o *Stream) bool				{ return s.Buffer.Identical(&o.Buffer) }
+func (s *Stream) Replace(o *Stream)						{ s.Buffer.Replace(&o.Buffer) }
 
-func (s *Stream) Identical(o *Stream) bool {
-	return s.Buffer.Identical(&o.Buffer)
+func (s *Stream) Add(offset int, o *Stream) {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	for i := 0; i < limit; i++ { s.Buffer[i + offset] += o.Buffer[i] }
 }
 
-func (s *Stream) Replace(o *Stream) {
-	s.Buffer.Replace(&o.Buffer)
+func (s *Stream) Subtract(offset int, o *Stream) {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	for i := 0; i < limit; i++ { s.Buffer[i + offset] -= o.Buffer[i] }
 }
 
-func (s *Stream) Add(o *Stream) {
-	x := s.Buffer.IntVector
-	y := o.Buffer.IntVector
-	r := min(len(x), len(y))
-	for i := 0; i < r; i++ { x[i] += y[i] }
+func (s *Stream) Multiply(offset int, o *Stream) {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	for i := 0; i < limit; i++ { s.Buffer[i + offset] *= o.Buffer[i] }
 }
 
-func (s *Stream) Subtract(o *Stream) {
-	x := s.Buffer.IntVector
-	y := o.Buffer.IntVector
-	r := min(len(x), len(y))
-	for i := 0; i < r; i++ { x[i] -= y[i] }
+func (s *Stream) Divide(offset int, o *Stream) {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	for i := 0; i < limit; i++ { s.Buffer[i + offset] /= o.Buffer[i] }
 }
 
-func (s *Stream) Multiply(o *Stream) {
-	x := s.Buffer.IntVector
-	y := o.Buffer.IntVector
-	r := min(len(x), len(y))
-	for i := 0; i < r; i++ { x[i] *= y[i] }
+func (s *Stream) And(offset int, o *Stream) {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	for i := 0; i < limit; i++ { s.Buffer[i + offset] &= o.Buffer[i] }
 }
 
-func (s *Stream) Divide(o *Stream) {
-	x := s.Buffer.IntVector
-	y := o.Buffer.IntVector
-	r := min(len(x), len(y))
-	for i := 0; i < r; i++ { x[i] /= y[i] }
+func (s *Stream) Or(offset int, o *Stream) {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	for i := 0; i < limit; i++ { s.Buffer[i + offset] |= o.Buffer[i] }
 }
 
-func (s *Stream) And(o *Stream) {
-	x := s.Buffer.IntVector
-	y := o.IntVector
-	r := min(len(x), len(y))
-	for i := 0; i < r; i++ { x[i] &= y[i] }
+func (s *Stream) Xor(offset int, o *Stream) {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	for i := 0; i < limit; i++ { s.Buffer[i + offset] ^= o.Buffer[i] }
 }
 
-func (s *Stream) Or(o *Stream) {
-	x := s.Buffer.IntVector
-	y := o.Buffer.IntVector
-	r := min(len(x), len(y))
-	for i := 0; i < r; i++ { x[i] |= y[i] }
+func (s *Stream) Clear(offset, count int) {
+	var limit int
+	if len(s.Buffer) < (offset + count) {
+		limit = len(s.Buffer)
+	} else {
+		limit = offset + count
+	}
+	for i := offset; i < limit; i++ { s.Buffer[i] = 0 }
 }
 
-func (s *Stream) Xor(o *Stream) {
-	x := s.Buffer.IntVector
-	y := o.Buffer.IntVector
-	r := min(len(x), len(y))
-	for i := 0; i < r; i++ { x[i] ^= y[i] }
+func (s *Stream) ClearAll() {
+	for i := range s.Buffer { s.Buffer[i] = 0 }
 }
 
-func (s *Stream) Increment() {
-	x := s.Buffer.IntVector
-	for i := 0; i < len(x); i++ { x[i] += 1 }
+func (s *Stream) Increment(offset, count int) {
+	var limit int
+	if len(s.Buffer) < (offset + count) {
+		limit = len(s.Buffer)
+	} else {
+		limit = offset + count
+	}
+	for i := offset; i < limit; i++ { s.Buffer[i] += 1 }
 }
 
-func (s *Stream) Decrement() {
-	x := s.Buffer.IntVector
-	for i := 0; i < len(x); i++ { x[i] -= 1 }
+func (s *Stream) IncrementAll() {
+	for i := range s.Buffer { s.Buffer[i] += 1 }
 }
 
-func (s *Stream) Negate() {
-	x := s.Buffer.IntVector
-	for i := 0; i < len(x); i++ { x[i] = -x[i] }
+func (s *Stream) Decrement(offset, count int) {
+	var limit int
+	if len(s.Buffer) < (offset + count) {
+		limit = len(s.Buffer)
+	} else {
+		limit = offset + count
+	}
+	for i := offset; i < limit; i++ { s.Buffer[i] -= 1 }
 }
 
-func (s *Stream) ShiftLeft(o *Stream) {
-	x := s.Buffer.IntVector
-	y := o.IntVector
-	r := min(len(x), len(y))
-	for i := 0; i < r; i++ { x[i] >>= uint(y[i]) }
+func (s *Stream) DecrementAll() {
+	for i := range s.Buffer { s.Buffer[i] -= 1 }
 }
 
-func (s *Stream) ShiftRight(o *Stream) {
-	x := s.Buffer.IntVector
-	y := o.IntVector
-	r := min(len(x), len(y))
-	for i := 0; i < r; i++ { x[i] <<= uint(y[i]) }
+func (s *Stream) Negate(offset, count int) {
+	var limit int
+	if len(s.Buffer) < (offset + count) {
+		limit = len(s.Buffer)
+	} else {
+		limit = offset + count
+	}
+	for i := offset; i < limit; i++ { s.Buffer[i] = -s.Buffer[i] }
 }
 
-func (s *Stream) Invert() {
-	x := s.Buffer.IntVector
-	for i := 0; i < len(x); i++ { x[i] = ^x[i] }
+func (s *Stream) NegateAll() {
+	for i, e := range s.Buffer { s.Buffer[i] = -e }
 }
 
-func (s *Stream) Equals(o *Stream) bool {
-	x := s.Buffer.IntVector
-	y := o.IntVector
-	r := min(len(x), len(y))
+func (s *Stream) ShiftLeft(offset int, o *Stream) {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	for i := 0; i < limit; i++ { s.Buffer[i + offset] >>= uint(o.Buffer[i]) }
+}
+
+func (s *Stream) ShiftRight(offset int, o *Stream) {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	for i := 0; i < limit; i++ { s.Buffer[i + offset] <<= uint(o.Buffer[i]) }
+}
+
+func (s *Stream) Invert(offset, count int) {
+	var limit int
+	if len(s.Buffer) < (offset + count) {
+		limit = len(s.Buffer)
+	} else {
+		limit = offset + count
+	}
+	for i := offset; i < limit; i++ { s.Buffer[i] = ^s.Buffer[i] }
+}
+
+func (s *Stream) Equals(offset int, o *Stream) bool {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
 	t := true
-	for i := 0; t && i < r; i++ { t = t && x[i] == y[i] }
+	for i := 0; i < limit; i++ { t = t && s.Buffer[i + offset] == o.Buffer[i] }
 	return t
 }
 
-func (s *Stream) EqualsZero() bool {
+func (s *Stream) EqualsZero(offset, count int) bool {
+	var limit int
+	if len(s.Buffer) < (offset + count) {
+		limit = len(s.Buffer)
+	} else {
+		limit = offset + count
+	}
 	t := true
-	x := s.Buffer.IntVector
-	for i := 0; t && i < len(x); i++ { t = t && x[i] == 0 }
+	for i := offset; t && i < limit; i++ { t = t && s.Buffer[i] == 0 }
 	return t
 }
 
-func (s *Stream) LessThan(o *Stream) bool {
-	x := s.Buffer.IntVector
-	y := o.IntVector
-	r := min(len(x), len(y))
+func (s *Stream) LessThan(offset int, o *Stream) bool {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
 	t := true
-	for i := 0; t && i < r; i++ { t = t && x[i] < y[i] }
+	for i := 0; i < limit; i++ { t = t && s.Buffer[i + offset] < o.Buffer[i] }
 	return t
 }
 
-func (s *Stream) LessThanZero() bool {
+func (s *Stream) LessThanZero(offset, count int) bool {
+	var limit int
+	if len(s.Buffer) < (offset + count) {
+		limit = len(s.Buffer)
+	} else {
+		limit = offset + count
+	}
 	t := true
-	x := s.Buffer.IntVector
-	for i := 0; t && i < len(x); i++ { t = t && x[i] < 0 }
+	for i := offset; t && i < limit; i++ { t = t && s.Buffer[i] < 0 }
 	return t
 }
 
-func (s *Stream) GreaterThan(o *Stream) bool {
-	x := s.Buffer.IntVector
-	y := o.IntVector
-	r := min(len(x), len(y))
+func (s *Stream) GreaterThan(offset int, o *Stream) bool {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
 	t := true
-	for i := 0; t && i < r; i++ { t = t && x[i] > y[i] }
+	for i := 0; i < limit; i++ { t = t && s.Buffer[i + offset] > o.Buffer[i] }
 	return t
 }
 
-func (s *Stream) GreaterThanZero() bool {
+func (s *Stream) GreaterThanZero(offset, count int) bool {
+	var limit int
+	if len(s.Buffer) < (offset + count) {
+		limit = len(s.Buffer)
+	} else {
+		limit = offset + count
+	}
 	t := true
-	x := s.Buffer.IntVector
-	for i := 0; t && i < len(x); i++ { t = t && x[i] > 0 }
+	for i := offset; t && i < limit; i++ { t = t && s.Buffer[i] > 0 }
 	return t
 }
 

@@ -45,7 +45,7 @@ func (r *RegisterBlock) Replace(a *RegisterBlock) {
 func (r *RegisterBlock) Clear() {
 	r.PC = 0
 	r.I = nil
-	r.R.Clear()
+	r.R.ClearAll()
 	r.M = nil
 }
 
