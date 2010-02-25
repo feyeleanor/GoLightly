@@ -88,6 +88,12 @@ func TestMaths(t *testing.T) {
 	compareValues(b, t, b.FAt(1), 11.9)
 	b.FAdd(0, 1)
 	compareValues(b, t, math.Fabs(float64(b.FAt(0) - 15.619)) < 0.001, true)
+	b.FSubtract(0, 1)
+	compareValues(b, t, math.Fabs(float64(b.FAt(0) - 3.719)) < 0.001, true)
+	b.FMultiply(0, 1)
+	compareValues(b, t, math.Fabs(float64(b.FAt(0) - 44.2561)) < 0.001, true)
+	b.FDivide(0, 1)
+	compareValues(b, t, math.Fabs(float64(b.FAt(0) - 3.719)) < 0.001, true)
 }
 
 func TestBitOperators(t *testing.T) {

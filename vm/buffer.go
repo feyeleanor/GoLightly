@@ -87,9 +87,9 @@ func (b *Buffer) Subtract(i, j int)						{ (*b)[i] -= (*b)[j] }
 func (b *Buffer) Multiply(i, j int)						{ (*b)[i] *= (*b)[j] }
 func (b *Buffer) Divide(i, j int)						{ (*b)[i] /= (*b)[j] }
 func (b *Buffer) FAdd(i, j int)							{ b.FSet(i, b.FAt(i) + b.FAt(j)) }
-//func (b *Buffer) FSubtract(i, j int)					{ (*b)[i] -= (*b)[j] }
-//func (b *Buffer) FMultiply(i, j int)					{ (*b)[i] *= (*b)[j] }
-//func (b *Buffer) FDivide(i, j int)						{ (*b)[i] /= (*b)[j] }
+func (b *Buffer) FSubtract(i, j int)					{ b.FSet(i, b.FAt(i) - b.FAt(j)) }
+func (b *Buffer) FMultiply(i, j int)					{ b.FSet(i, b.FAt(i) * b.FAt(j)) }
+func (b *Buffer) FDivide(i, j int)						{ b.FSet(i, b.FAt(i) / b.FAt(j)) }
 func (b *Buffer) And(i, j int)							{ (*b)[i] &= (*b)[j] }
 func (b *Buffer) Or(i, j int)							{ (*b)[i] |= (*b)[j] }
 func (b *Buffer) Xor(i, j int)							{ (*b)[i] ^= (*b)[j] }

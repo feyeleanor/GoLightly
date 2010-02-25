@@ -67,6 +67,14 @@ func BenchmarkBufferSubtract(b *testing.B) {
     for i := 0; i < b.N; i++ { buffer.Subtract(0, 1) }
 }
 
+func BenchmarkBufferFSubtract(b *testing.B) {
+    b.StopTimer()
+	buffer := defaultBuffer()
+	buffer.FSet(0, 0.0)
+    b.StartTimer()
+    for i := 0; i < b.N; i++ { buffer.FSubtract(0, 1.0) }
+}
+
 func BenchmarkBufferMultiply(b *testing.B) {
     b.StopTimer()
 	buffer := defaultBuffer()
@@ -75,12 +83,30 @@ func BenchmarkBufferMultiply(b *testing.B) {
     for i := 0; i < b.N; i++ { buffer.Multiply(0, 1) }
 }
 
+func BenchmarkBufferFMultiply(b *testing.B) {
+    b.StopTimer()
+	buffer := defaultBuffer()
+	buffer.FSet(0, 1.0)
+	buffer.FSet(1, 1.0)
+    b.StartTimer()
+    for i := 0; i < b.N; i++ { buffer.FMultiply(0, 1.0) }
+}
+
 func BenchmarkBufferDivide(b *testing.B) {
     b.StopTimer()
 	buffer := defaultBuffer()
 	buffer.Set(0, 987654321)
     b.StartTimer()
     for i := 0; i < b.N; i++ { buffer.Divide(0, 1) }
+}
+
+func BenchmarkBufferFDivide(b *testing.B) {
+    b.StopTimer()
+	buffer := defaultBuffer()
+	buffer.FSet(0, 987654321.0)
+	buffer.FSet(1, 2.0)
+    b.StartTimer()
+    for i := 0; i < b.N; i++ { buffer.FDivide(0, 1.0) }
 }
 
 func BenchmarkBufferIncrement(b *testing.B) {
