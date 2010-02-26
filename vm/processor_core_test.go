@@ -112,27 +112,27 @@ func checkFlowControl(p *ProcessorCore, t *testing.T, program *[]*OpCode) {
 func checkProgramExecution(p *ProcessorCore, t *testing.T) {
 	compareValues(p, t, len(p.program), len(*defaultProgram(p)))
 	p.LoadInstruction()
-	p.Execute()														//	program[0]
+	p.Execute()															//	program[0]
 	compareValues(p, t, p.R.At(0), 37)
 	p.StepForward()
 	p.Execute()
-	compareValues(p, t, p.R.At(0), 38)								//	program[1]
+	compareValues(p, t, p.R.At(0), 38)									//	program[1]
 	resetProcessor(p, t)
 	p.StepForward()
 	p.Execute()
-	compareValues(p, t, p.R.At(0), 1)								//	program[1]
+	compareValues(p, t, p.R.At(0), 1)									//	program[1]
 	resetProcessor(p, t)
-	p.Run()															//	program[7] is an illegal instruction
+	p.Run()																//	program[7] is an illegal instruction
 	compareValues(p, t, p.Running, false)
 	compareValues(p, t, p.Illegal_Operation, true)
-	compareValues(p, t, p.PC, len(p.program) - 1)					//	terminated without executing program[7]
+	compareValues(p, t, p.PC, len(p.program) - 1)						//	terminated without executing program[7]
 	compareValues(p, t, p.R.At(0), 37)
-	p.program[7] = &OpCode{code: p.Code("cld"), a: 1, b: 100}		//	replace program[7] with		cld	1, 100
+	p.program[7] = &OpCode{code: p.Code("cld"), data: []int{1, 100}}	//	replace program[7] with		cld	1, 100
 	resetProcessor(p, t)
 	p.Run()
 	compareValues(p, t, p.Running, false)
 	compareValues(p, t, p.Illegal_Operation, false)
-	compareValues(p, t, p.PC, len(p.program))						//	terminated with all instructions executed
+	compareValues(p, t, p.PC, len(p.program))							//	terminated with all instructions executed
 	compareValues(p, t, p.R.At(0), 37)
 	compareValues(p, t, p.R.At(1), 100)
 }

@@ -8,19 +8,21 @@ import "container/vector"
 import "fmt"
 
 type OpCode struct {
-	code, a, b, c	int;
+	code	int
+	data	Buffer
 }
 func (o *OpCode) Similar(p *OpCode) bool {
-	return o.code == p.code
+	return o.code == p.code && o.data.Len() == p.data.Len()
 }
 func (o *OpCode) Identical(p *OpCode) bool {
-	return o.Similar(p) && o.a == p.a && o.b == p.b && o.c == p.c
+	return o.Similar(p) && o.data.Identical(&p.data)
 }
 func (o *OpCode) Replace(p *OpCode) {
-	o.code, o.a, o.b, o.c = p.code, p.a, p.b, p.c
+	o.code = p.code
+	o.data = *p.data.Clone()
 }
 func (o *OpCode) String() string {
-	return fmt.Sprintf("%v %v, %v, %v", o.code, o.a, o.b, o.c)
+	return fmt.Sprintf("%v: %v", o.code, o.data)
 }
 
 type InstructionSet struct {
@@ -50,7 +52,7 @@ func (i *InstructionSet) Code(name string) int {
 }
 func (i *InstructionSet) OpCode(name string, a, b, c int) *OpCode {
 	if op := i.Code(name); op != -1 {
-		return &OpCode{code: op, a: a, b: b, c: c}
+		return &OpCode{code: op, data: []int{a, b, c}}
 	}
 	return nil
 }

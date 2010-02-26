@@ -89,50 +89,75 @@ func (p *ProcessorCore) Clone(c chan *Vector) (q *ProcessorCore, i int) {
 	return
 }
 func (p *ProcessorCore) DefineInstructions() {
-	p.Define("noop",	func (o *OpCode)	{})																//	NOOP
-	p.Define("nsleep",	func (o *OpCode)	{ syscall.Sleep(int64(o.a)) })									//	NSLEEP	n
-	p.Define("sleep",	func (o *OpCode)	{ syscall.Sleep(int64(o.a) << 32) })							//	SLEEP	n
-	p.Define("halt",	func (o *OpCode)	{ p.Running = false })											//	HALT
-	p.Define("jmp",		func (o *OpCode)	{ p.JumpRelative(o.a) })										//	JMP		n
-	p.Define("jmpz",	func (o *OpCode)	{ if p.R.Buffer.EqualsZero(o.a) { p.JumpRelative(o.b) } })		//	JMPZ	r, n
-	p.Define("jmpnz",	func (o *OpCode)	{ if !p.R.Buffer.EqualsZero(o.a) { p.JumpRelative(o.b) } })		//	JMPNZ	r, n
-	p.Define("call",	func (o *OpCode)	{ p.Call(o.a) })												//	CALL	n
-	p.Define("ret",		func (o *OpCode)	{ p.Return() })													//	RET
-	p.Define("push",	func (o *OpCode)	{ p.data_stack.Push(p.R.At(o.a)) })								//	PUSH	r
-	p.Define("pop",		func (o *OpCode)	{ p.R.Set(o.a, p.data_stack.Pop()) })							//	POP		r
-	p.Define("cld",		func (o *OpCode)	{ p.R.Set(o.a, o.b) })											//	CLD		r, v
-	p.Define("send",	func (o *OpCode)	{ p.IOController.Send(o.a, p.M) })								//	SEND	c
-	p.Define("recv",	func (o *OpCode)	{ p.M = p.IOController.Receive(o.a) })							//	RECV	c
-	p.Define("inc",		func (o *OpCode)	{ p.R.Buffer.Increment(o.a) })									//	INC		r
-	p.Define("dec",		func (o *OpCode)	{ p.R.Buffer.Decrement(o.a) })									//	DEC		r
-	p.Define("add",		func (o *OpCode)	{ p.R.Buffer.Add(o.a, o.b) })									//	ADD		r1, r2
-	p.Define("sub",		func (o *OpCode)	{ p.R.Buffer.Subtract(o.a, o.b) })								//	SUB		r1, r2
-	p.Define("mul",		func (o *OpCode)	{ p.R.Buffer.Multiply(o.a, o.b) })								//	MUL		r1, r2
-	p.Define("div",		func (o *OpCode)	{																//	DIV		r1, r2
-		if p.R.At(o.b) == 0 {
+	p.Define("noop",	func (o *OpCode) {})						//	NOOP
+	p.Define("nsleep",	func (o *OpCode) {							//	NSLEEP	n
+		syscall.Sleep(int64(o.data[0]))
+	})
+	p.Define("sleep",	func (o *OpCode) {							//	SLEEP	n
+		syscall.Sleep(int64(o.data[0]) << 32)
+	})
+	p.Define("halt",	func (o *OpCode) { p.Running = false })		//	HALT
+	p.Define("jmp",		func (o *OpCode) {							//	JMP		n
+		p.JumpRelative(o.data[0])
+	})
+	p.Define("jmpz",	func (o *OpCode) {							//	JMPZ	r, n
+		if p.R.Buffer.EqualsZero(o.data[0]) { p.JumpRelative(o.data[1]) }
+	})
+	p.Define("jmpnz",	func (o *OpCode) {							//	JMPNZ	r, n
+		if !p.R.Buffer.EqualsZero(o.data[0]) { p.JumpRelative(o.data[1]) }
+	})
+	p.Define("call",	func (o *OpCode) {							//	CALL	n
+		p.Call(o.data[0])
+	})
+	p.Define("ret",		func (o *OpCode) { p.Return() })			//	RET
+	p.Define("push",	func (o *OpCode) {							//	PUSH	r
+		p.data_stack.Push(p.R.At(o.data[0]))
+	})
+	p.Define("pop",		func (o *OpCode) {							//	POP		r
+		p.R.Set(o.data[0], p.data_stack.Pop())
+	})
+	p.Define("cld",		func (o *OpCode) {							//	CLD		r, v
+		p.R.Set(o.data[0], o.data[1])
+	})
+	p.Define("send",	func (o *OpCode) {							//	SEND	c
+		p.IOController.Send(o.data[0], p.M)
+	})
+	p.Define("recv",	func (o *OpCode) {							//	RECV	c
+		p.M = p.IOController.Receive(o.data[0])
+	})
+	p.Define("inc",		func (o *OpCode) {							//	INC		r
+		p.R.Buffer.Increment(o.data[0])
+	})
+	p.Define("dec",		func (o *OpCode) {							//	DEC		r
+		p.R.Buffer.Decrement(o.data[0])
+	})
+	p.Define("add",		func (o *OpCode) {							//	ADD		r1, r2
+		p.R.Buffer.Add(o.data[0], o.data[1])
+	})
+	p.Define("sub",		func (o *OpCode) {							//	SUB		r1, r2
+		p.R.Buffer.Subtract(o.data[0], o.data[1])
+	})
+	p.Define("mul",		func (o *OpCode) {							//	MUL		r1, r2
+		p.R.Buffer.Multiply(o.data[0], o.data[1])
+	})
+	p.Define("div",		func (o *OpCode) {							//	DIV		r1, r2
+		if p.R.At(o.data[1]) == 0 {
 			p.DivideByZero()
 		} else {
-			p.R.Buffer.Divide(o.a, o.b)
+			p.R.Buffer.Divide(o.data[0], o.data[1])
 		}
 	})
-	p.Define("and",		func (o *OpCode)	{ p.R.Buffer.And(o.a, o.b) })									//	AND		r1, r2
-	p.Define("or",		func (o *OpCode)	{ p.R.Buffer.Or(o.a, o.b) })									//	OR		r1, r2
-	p.Define("xor",		func (o *OpCode)	{ p.R.Buffer.Xor(o.a, o.b) })									//	XOR		r1, r2
-//	p.Define("iadd",	func (o *OpCode)	{ p.R.Buffer.Add(o.a, p.M.At(o.b)) })							//	IADD	r, m
-//	p.Define("isub",	func (o *OpCode)	{ p.R.Buffer.Subtract(o.a, p.M.At(o.b)) })						//	ISUB	r, m
-//	p.Define("imul",	func (o *OpCode)	{ p.R.Buffer.Multiply(o.a, p.M.At(o.b)) })						//	IMUL	r, m
-//	p.Define("idiv",	func (o *OpCode)	{																//	IDIV	r, m
-//		if p.R.At(o.b) == 0 {
-//			p.DivideByZero()
-//		} else {
-//			p.R.Buffer.Divide(o.a, p.M.At(o.b))
-//		}
-//	})
-//	p.Define("iand",	func (o *OpCode)	{ p.R.Buffer.And(o.a, p.M.At(o.b)) })							//	IAND	r, m
-//	p.Define("ior",		func (o *OpCode)	{ p.R.Buffer.Or(o.a, p.M.At(o.b)) })							//	IOR		r, m
-//	p.Define("ixor",	func (o *OpCode)	{ p.R.Buffer.Xor(o.a, p.M.At(o.b)) })							//	IXOR	r, m
-//	p.Define("malloc",	func (o *OpCode)	{ p.R.PutBuffer(o.a, p.MMU.Allocate(o.b)) })					//	MALLOC	r, n
-//	p.Define("select",	func (o *OpCode)	{ p.M = p.R.GetBuffer(o.a) })									//	SELECT	r
+	p.Define("and",		func (o *OpCode) {							//	AND		r1, r2
+		p.R.Buffer.And(o.data[0], o.data[1])
+	})
+	p.Define("or",		func (o *OpCode) {							//	OR		r1, r2
+		p.R.Buffer.Or(o.data[0], o.data[1])
+	})
+	p.Define("xor",		func (o *OpCode) {							//	XOR		r1, r2
+		p.R.Buffer.Xor(o.data[0], o.data[1])
+	})
+//	p.Define("malloc",	func (o *OpCode) { p.R.PutBuffer(o.a, p.MMU.Allocate(o.b)) })					//	MALLOC	r, n
+//	p.Define("select",	func (o *OpCode) { p.M = p.R.GetBuffer(o.a) })									//	SELECT	r
 }
 func (p *ProcessorCore) ValidPC() bool {
 	return (p.PC > -1) && (p.PC < len(p.program)) && p.Running
@@ -228,47 +253,34 @@ func (p *ProcessorCore) RunInline() {
 func (p *ProcessorCore) InlinedInstructions() bool {
 	switch p.I.code {
 		case 0:
-		case 1:			syscall.Sleep(int64(p.I.a))
-		case 2:			syscall.Sleep(int64(p.I.a) << 32)
+		case 1:			syscall.Sleep(int64(p.I.data[0]))
+		case 2:			syscall.Sleep(int64(p.I.data[0]) << 32)
 		case 3:			p.Running = false
-		case 4:			p.JumpRelative(p.I.a)
-		case 5:			if p.R.Buffer.EqualsZero(p.I.a) { p.JumpRelative(p.I.b) }
-		case 6:			if !p.R.Buffer.EqualsZero(p.I.a) { p.JumpRelative(p.I.b) }
-		case 7:			p.Call(p.I.a)
+		case 4:			p.JumpRelative(p.I.data[0])
+		case 5:			if p.R.Buffer.EqualsZero(p.I.data[0]) { p.JumpRelative(p.I.data[1]) }
+		case 6:			if !p.R.Buffer.EqualsZero(p.I.data[0]) { p.JumpRelative(p.I.data[1]) }
+		case 7:			p.Call(p.I.data[0])
 		case 8:			p.Return()
-		case 9:			p.data_stack.Push(p.R.At(p.I.a))
-		case 10:		p.R.Set(p.I.a, p.data_stack.Pop())
-		case 11:		p.R.Set(p.I.a, p.I.b)
-		case 12:		p.IOController.Send(p.I.a, p.M)
-		case 13:		p.M = p.IOController.Receive(p.I.a)
-		case 14:		p.R.Buffer.Increment(p.I.a)
-		case 15:		p.R.Buffer.Decrement(p.I.a)
-		case 16:		p.R.Buffer.Add(p.I.a, p.I.b)
-		case 17:		p.R.Buffer.Subtract(p.I.a, p.I.b)
-		case 18:		p.R.Buffer.Multiply(p.I.a, p.I.b)
-		case 19:		d := p.I.b
+		case 9:			p.data_stack.Push(p.R.At(p.I.data[0]))
+		case 10:		p.R.Set(p.I.data[0], p.data_stack.Pop())
+		case 11:		p.R.Set(p.I.data[0], p.I.data[1])
+		case 12:		p.IOController.Send(p.I.data[0], p.M)
+		case 13:		p.M = p.IOController.Receive(p.I.data[0])
+		case 14:		p.R.Buffer.Increment(p.I.data[0])
+		case 15:		p.R.Buffer.Decrement(p.I.data[0])
+		case 16:		p.R.Buffer.Add(p.I.data[0], p.I.data[1])
+		case 17:		p.R.Buffer.Subtract(p.I.data[0], p.I.data[1])
+		case 18:		p.R.Buffer.Multiply(p.I.data[0], p.I.data[1])
+		case 19:		d := p.I.data[1]
 						if d == 0 {
 							p.Divide_by_Zero = true
 							p.Running = false
 						} else {
-							p.R.Buffer.Divide(p.I.a, d)
+							p.R.Buffer.Divide(p.I.data[0], d)
 						}
-		case 20:		p.R.Buffer.And(p.I.a, p.I.b)
-		case 21:		p.R.Buffer.Or(p.I.a, p.I.b)
-		case 22:		p.R.Buffer.Xor(p.I.a, p.I.b)
-//		case 23:		p.R.Buffer.Add(p.I.a, p.M.At(p.I.b))
-//		case 24:		p.R.Buffer.Subtract(p.I.a, p.M.At(p.I.b))
-//		case 25:		p.R.Buffer.Multiply(p.I.a, p.M.At(p.I.b))
-//		case 26:		d := p.M.At(p.I.b)
-//						if d == 0 {
-//							p.Divide_by_Zero = true
-//							p.Running = false
-//						} else {
-//							p.R.Buffer.Divide(p.I.a, d)
-//						}
-//		case 27:		p.R.Buffer.And(p.I.a, p.M.At(p.I.b))
-//		case 28:		p.R.Buffer.Or(p.I.a, p.M.At(p.I.b))
-//		case 29:		p.R.Buffer.Xor(p.I.a, p.M.At(p.I.b))
+		case 20:		p.R.Buffer.And(p.I.data[0], p.I.data[1])
+		case 21:		p.R.Buffer.Or(p.I.data[0], p.I.data[1])
+		case 22:		p.R.Buffer.Xor(p.I.data[0], p.I.data[1])
 		default:		if !p.Invoke(p.I) {
 							p.Running = false
 							p.Illegal_Operation = true
