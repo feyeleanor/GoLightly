@@ -66,10 +66,8 @@ func (b *Buffer) Slice(i, j int) *Buffer {
 func (b *Buffer) Replicate(count int) *Buffer {
 	s := new(Buffer)
 	s.Resize(len(*b) * count)
-	for i := 0; i < count; i++ {
-		offset := count * i
-		limit := offset + count
-		copy((*s)[offset:limit], *b)
+	for offset := 0; offset < len(*s); offset += len(*b) {
+		copy((*s)[offset:offset + len(*b)], *b)
 	}
 	return s
 }

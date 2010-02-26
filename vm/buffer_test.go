@@ -6,6 +6,14 @@ import "math"
 
 var predicate_index int
 
+func twoIntegerBuffer() *Buffer {
+	b := new(Buffer)
+	b.Init(2)
+	b.Set(0, 100)
+	b.Set(1, 200)
+	return b
+}
+
 func sixIntegerBuffer() *Buffer {
 	b := new(Buffer)
 	b.Init(6)
@@ -54,6 +62,19 @@ func TestBufferCreate(t *testing.T) {
 
 func TestBufferClone(t *testing.T) {
 	checkIntegerBuffer(sixIntegerBuffer().Clone(), sixIntegerBuffer(), t, true)
+}
+
+func TestBufferReplication(t *testing.T) {
+	b1 := twoIntegerBuffer()
+	b2 := b1.Replicate(3)
+	compareValues(b2, t, b2.Len(), 6)
+	compareValues(b2, t, b2.Cap(), 6)
+	compareValues(b2, t, b2.At(0) == b1.At(0), true)
+	compareValues(b2, t, b2.At(1) == b1.At(1), true)
+	compareValues(b2, t, b2.At(2) == b1.At(0), true)
+	compareValues(b2, t, b2.At(3) == b1.At(1), true)
+	compareValues(b2, t, b2.At(4) == b1.At(0), true)
+	compareValues(b2, t, b2.At(5) == b1.At(1), true)
 }
 
 func TestBufferSlice(t *testing.T) {

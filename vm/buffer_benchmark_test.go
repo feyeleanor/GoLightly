@@ -1,6 +1,5 @@
 package vm
 import "testing"
-import "container/vector"
 import "unsafe"
 
 func floatArray() []float {
@@ -22,6 +21,34 @@ func BenchmarkBufferFloatsFromInts(b *testing.B) {
 	a := floatsToInts(floatArray())
 	b.StartTimer()
     for i := 0; i < b.N; i++ { f := intsToFloats(a); f[0] += 2.0 }
+}
+
+func BenchmarkBufferReplicate2x2(b *testing.B) {
+	b.StopTimer()
+	buffer := twoIntegerBuffer()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ { buffer.Replicate(2) }
+}
+
+func BenchmarkBufferReplicate2x10(b *testing.B) {
+	b.StopTimer()
+	buffer := twoIntegerBuffer()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ { buffer.Replicate(10) }
+}
+
+func BenchmarkBufferReplicate6x2(b *testing.B) {
+	b.StopTimer()
+	buffer := sixIntegerBuffer()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ { buffer.Replicate(2) }
+}
+
+func BenchmarkBufferReplicate6x10(b *testing.B) {
+	b.StopTimer()
+	buffer := sixIntegerBuffer()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ { buffer.Replicate(10) }
 }
 
 func BenchmarkBufferAt(b *testing.B) {
@@ -162,60 +189,4 @@ func BenchmarkBufferInvert(b *testing.B) {
 	buffer.Set(0, 100)
     b.StartTimer()
     for i := 0; i < b.N; i++ { buffer.Invert(0) }
-}
-
-func BenchmarkValueAt(b *testing.B) {
-    b.StopTimer()
-	v := new(vector.Vector)
-	v.Push(0)
-    b.StartTimer()
-    for i := 0; i < b.N; i++ { v.At(0) }
-}
-
-func BenchmarkValueSet(b *testing.B) {
-    b.StopTimer()
-	v := new(vector.Vector)
-	v.Push(0)
-    b.StartTimer()
-    for i := 0; i < b.N; i++ { v.Set(0, 1) }
-}
-
-func BenchmarkValueAdd(b *testing.B) {
-    b.StopTimer()
-	v := new(vector.Vector)
-	v.Push(0)
-	a := *v
-    b.StartTimer()
-//    for i := 0; i < b.N; i++ { v.Set(0, v.At(0).(int) + 1) }
-    for i := 0; i < b.N; i++ { a[0] = a[0].(int) + 1 }
-}
-
-func BenchmarkValueSubtract(b *testing.B) {
-    b.StopTimer()
-	v := new(vector.Vector)
-	v.Push(0)
-	a := *v
-    b.StartTimer()
-//    for i := 0; i < b.N; i++ { v.Set(0, v.At(0).(int) - 1) }
-    for i := 0; i < b.N; i++ { a[0] = a[0].(int) - 1 }
-}
-
-func BenchmarkValueMultiply(b *testing.B) {
-    b.StopTimer()
-	v := new(vector.Vector)
-	v.Push(2)
-	a := *v
-    b.StartTimer()
-//    for i := 0; i < b.N; i++ { v.Set(0, v.At(0).(int) * 27) }
-    for i := 0; i < b.N; i++ { a[0] = a[0].(int) * 27 }
-}
-
-func BenchmarkValueDivide(b *testing.B) {
-    b.StopTimer()
-	v := new(vector.Vector)
-	v.Push(987654321)
-	a := *v
-    b.StartTimer()
-//    for i := 0; i < b.N; i++ { v.Set(0, v.At(0).(int) / 4) }
-    for i := 0; i < b.N; i++ { a[0] = a[0].(int) / 1 }
 }

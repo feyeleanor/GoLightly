@@ -17,9 +17,7 @@ func oneFloatVector() *Vector {
 
 func twoIntegerVector() *Vector {
 	s := new(Vector)
-	s.Init(2)
-	s.Buffer.Set(0, 100)
-	s.Buffer.Set(1, 200)
+	s.Buffer = *twoIntegerBuffer()
 	return s
 }
 
