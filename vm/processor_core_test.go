@@ -5,7 +5,6 @@
 
 package vm
 import "testing"
-import "os"
 
 const BUFFER_ALLOCATION = 32
 
@@ -15,29 +14,26 @@ func defaultRegisterBlock() *RegisterBlock {
 	return r
 }
 
-func checkAllocatedStream(s *Stream, t *testing.T) {
+func checkAllocatedVector(s *Vector, t *testing.T) {
 	compareValues(s, t, s.Len(), BUFFER_ALLOCATION)
 	compareValues(s, t, s.Cap(), BUFFER_ALLOCATION)
 	for i := 0; i < s.Len(); i++ { compareValues(s, t, s.At(i), 0) }
 }
 
 func checkDefaultRegisterBlock(r *RegisterBlock, t *testing.T) {
-	checkAllocatedStream(r.R, t)
+	checkAllocatedVector(r.R, t)
 	compareValues(r, t, r.M == nil, true)
 	compareValues(r, t, r.I == nil, true)
 	compareValues(r, t, r.PC, 0)
 }
 
 func TestRegisterBlock(t *testing.T) {
-	os.Stdout.WriteString("Register Block Creation\n")
 	r := defaultRegisterBlock()
 	checkDefaultRegisterBlock(r, t)
-	os.Stdout.WriteString("Register Block Cloning\n")
 	c := r.Clone()
 	checkDefaultRegisterBlock(c, t)
-	os.Stdout.WriteString("Register Block Replacement\n")
 	r.PC = 27
-	r.M = new(Stream)
+	r.M = new(Vector)
 	r.M.Init(48)
 	compareValues(r, t, r.PC, 27)
 	compareValues(r, t, r.M.Cap(), 48)
@@ -48,10 +44,9 @@ func TestRegisterBlock(t *testing.T) {
 }
 
 func TestMMU(t *testing.T) {
-	os.Stdout.WriteString("MMU Allocation\n")
 	m := new(MMU)
 	s := m.Allocate(BUFFER_ALLOCATION)
-	checkAllocatedStream(s, t)
+	checkAllocatedVector(s, t)
 }
 
 func defaultProgram(p *ProcessorCore) *[]*OpCode {
@@ -77,7 +72,7 @@ func advancedProgram(p *ProcessorCore) *[]*OpCode {
 }
 
 func checkProcessorInitialised(p *ProcessorCore, t *testing.T) {
-	checkAllocatedStream(p.R, t)
+	checkAllocatedVector(p.R, t)
 	compareValues(p, t, p.Running, true)
 	compareValues(p, t, p.PC, 0)
 	compareValues(p, t, p.I == nil, true)
@@ -85,7 +80,6 @@ func checkProcessorInitialised(p *ProcessorCore, t *testing.T) {
 }
 
 func TestProcessorCoreCreation(t *testing.T) {
-	os.Stdout.WriteString("Processor Core Creation\n")
 	p := new(ProcessorCore)
 	p.Init(BUFFER_ALLOCATION, nil)
 	checkProcessorInitialised(p, t)
@@ -144,7 +138,6 @@ func checkProgramExecution(p *ProcessorCore, t *testing.T) {
 }
 
 func TestProcessorCoreExecution(t *testing.T) {
-	os.Stdout.WriteString("Processor Core Program Execution\n")
 	p := new(ProcessorCore)
 	p.Init(BUFFER_ALLOCATION, nil)
 	checkProcessorInitialised(p, t)

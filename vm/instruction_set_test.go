@@ -1,6 +1,5 @@
 package vm
 import "testing"
-import "os"
 
 var REGISTER int
 
@@ -59,7 +58,6 @@ func checkInstructionCompilation(i *InstructionSet, t *testing.T) {
 }
 
 func TestInstructionSetCreation(t *testing.T) {
-	os.Stdout.WriteString("Instruction Set Creation\n")
 	i := defaultInstructionSet()
 	compareValues(i, t, i.Len(), 5)
 	checkDefaultInstructionSet(i, t)

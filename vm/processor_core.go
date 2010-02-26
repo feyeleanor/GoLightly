@@ -26,13 +26,13 @@ func (f *ExecutionFlags) Clear() {
 type RegisterBlock struct {
 	PC				int
 	I				*OpCode
-	R				*Stream
-	M				*Stream
+	R				*Vector
+	M				*Vector
 }
 func (r *RegisterBlock) Allocate(count int) {
 	r.PC = 0
 	r.I = nil
-	r.R = new(Stream)
+	r.R = new(Vector)
 	r.R.Init(count)
 	r.M = nil
 }
@@ -50,8 +50,8 @@ func (r *RegisterBlock) Clear() {
 }
 
 type MMU struct {}
-func (m *MMU) Allocate(words int) *Stream {
-	s := new(Stream)
+func (m *MMU) Allocate(words int) *Vector {
+	s := new(Vector)
 	s.Init(words)
 	return s
 }
@@ -80,7 +80,7 @@ func (p *ProcessorCore) Init(registers int, instructions *InstructionSet) {
 }
 //	Make a copy of the current processor, binding it to the current processor with
 //	the supplied io channel
-func (p *ProcessorCore) Clone(c chan *Stream) (q *ProcessorCore, i int) {
+func (p *ProcessorCore) Clone(c chan *Vector) (q *ProcessorCore, i int) {
 	q = new(ProcessorCore)
 	q.Init(p.R.Len(), p.InstructionSet)
 	q.IOController.Open(c)

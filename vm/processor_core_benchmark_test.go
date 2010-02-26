@@ -12,7 +12,7 @@ func BenchmarkCloneProcessorCore(b *testing.B) {
 	b.StopTimer()
 	p := new(ProcessorCore)
 	p.Init(32, nil)
-	c := make(chan *Stream)
+	c := make(chan *Vector)
 	b.StartTimer()
     for i := 0; i < b.N; i++ { p.Clone(c) }
 }

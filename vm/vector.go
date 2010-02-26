@@ -5,19 +5,19 @@
 package vm
 
 import "unsafe"
-//import "os"
-//import "fmt"
+import "math"
 
-type Stream struct {
+type Vector struct {
 	Buffer
 }
 
-func (s *Stream) Slice(i, j int) *Stream				{ return &Stream{*s.Buffer.Slice(i, j)} }
-func (s *Stream) Clone() *Stream						{ return s.Slice(0, s.Len()) }
-func (s *Stream) Identical(o *Stream) bool				{ return s.Buffer.Identical(&o.Buffer) }
-func (s *Stream) Replace(o *Stream)						{ s.Buffer.Replace(&o.Buffer) }
+func (s *Vector) Slice(i, j int) *Vector				{ return &Vector{*s.Buffer.Slice(i, j)} }
+func (s *Vector) Clone() *Vector						{ return s.Slice(0, s.Len()) }
+func (s *Vector) Identical(o *Vector) bool				{ return s.Buffer.Identical(&o.Buffer) }
+func (s *Vector) FIdentical(o *Vector, t float) bool	{ return s.Buffer.FIdentical(&o.Buffer, t) }
+func (s *Vector) Replace(o *Vector)						{ s.Buffer.Replace(&o.Buffer) }
 
-func (s *Stream) Add(offset int, o *Stream) {
+func (s *Vector) Add(offset int, o *Vector) {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -27,7 +27,7 @@ func (s *Stream) Add(offset int, o *Stream) {
 	for i := 0; i < limit; i++ { s.Buffer[i + offset] += o.Buffer[i] }
 }
 
-func (s *Stream) Subtract(offset int, o *Stream) {
+func (s *Vector) Subtract(offset int, o *Vector) {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -37,7 +37,7 @@ func (s *Stream) Subtract(offset int, o *Stream) {
 	for i := 0; i < limit; i++ { s.Buffer[i + offset] -= o.Buffer[i] }
 }
 
-func (s *Stream) Multiply(offset int, o *Stream) {
+func (s *Vector) Multiply(offset int, o *Vector) {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -47,7 +47,7 @@ func (s *Stream) Multiply(offset int, o *Stream) {
 	for i := 0; i < limit; i++ { s.Buffer[i + offset] *= o.Buffer[i] }
 }
 
-func (s *Stream) Divide(offset int, o *Stream) {
+func (s *Vector) Divide(offset int, o *Vector) {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -57,7 +57,7 @@ func (s *Stream) Divide(offset int, o *Stream) {
 	for i := 0; i < limit; i++ { s.Buffer[i + offset] /= o.Buffer[i] }
 }
 
-func (s *Stream) FAdd(offset int, o *Stream) {
+func (s *Vector) FAdd(offset int, o *Vector) {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -69,7 +69,7 @@ func (s *Stream) FAdd(offset int, o *Stream) {
 	for i := 0; i < limit; i++ { sfb[i + offset] += ofb[i] }
 }
 
-func (s *Stream) FSubtract(offset int, o *Stream) {
+func (s *Vector) FSubtract(offset int, o *Vector) {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -81,7 +81,7 @@ func (s *Stream) FSubtract(offset int, o *Stream) {
 	for i := 0; i < limit; i++ { sfb[i + offset] -= ofb[i] }
 }
 
-func (s *Stream) FMultiply(offset int, o *Stream) {
+func (s *Vector) FMultiply(offset int, o *Vector) {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -93,7 +93,7 @@ func (s *Stream) FMultiply(offset int, o *Stream) {
 	for i := 0; i < limit; i++ { sfb[i + offset] *= ofb[i] }
 }
 
-func (s *Stream) FDivide(offset int, o *Stream) {
+func (s *Vector) FDivide(offset int, o *Vector) {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -105,7 +105,7 @@ func (s *Stream) FDivide(offset int, o *Stream) {
 	for i := 0; i < limit; i++ { sfb[i + offset] /= ofb[i] }
 }
 
-func (s *Stream) And(offset int, o *Stream) {
+func (s *Vector) And(offset int, o *Vector) {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -115,7 +115,7 @@ func (s *Stream) And(offset int, o *Stream) {
 	for i := 0; i < limit; i++ { s.Buffer[i + offset] &= o.Buffer[i] }
 }
 
-func (s *Stream) Or(offset int, o *Stream) {
+func (s *Vector) Or(offset int, o *Vector) {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -125,7 +125,7 @@ func (s *Stream) Or(offset int, o *Stream) {
 	for i := 0; i < limit; i++ { s.Buffer[i + offset] |= o.Buffer[i] }
 }
 
-func (s *Stream) Xor(offset int, o *Stream) {
+func (s *Vector) Xor(offset int, o *Vector) {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -135,7 +135,7 @@ func (s *Stream) Xor(offset int, o *Stream) {
 	for i := 0; i < limit; i++ { s.Buffer[i + offset] ^= o.Buffer[i] }
 }
 
-func (s *Stream) Clear(offset, count int) {
+func (s *Vector) Clear(offset, count int) {
 	var limit int
 	if len(s.Buffer) < (offset + count) {
 		limit = len(s.Buffer)
@@ -145,11 +145,11 @@ func (s *Stream) Clear(offset, count int) {
 	for i := offset; i < limit; i++ { s.Buffer[i] = 0 }
 }
 
-func (s *Stream) ClearAll() {
+func (s *Vector) ClearAll() {
 	for i := range s.Buffer { s.Buffer[i] = 0 }
 }
 
-func (s *Stream) Increment(offset, count int) {
+func (s *Vector) Increment(offset, count int) {
 	var limit int
 	if len(s.Buffer) < (offset + count) {
 		limit = len(s.Buffer)
@@ -159,11 +159,11 @@ func (s *Stream) Increment(offset, count int) {
 	for i := offset; i < limit; i++ { s.Buffer[i] += 1 }
 }
 
-func (s *Stream) IncrementAll() {
+func (s *Vector) IncrementAll() {
 	for i := range s.Buffer { s.Buffer[i] += 1 }
 }
 
-func (s *Stream) Decrement(offset, count int) {
+func (s *Vector) Decrement(offset, count int) {
 	var limit int
 	if len(s.Buffer) < (offset + count) {
 		limit = len(s.Buffer)
@@ -173,11 +173,11 @@ func (s *Stream) Decrement(offset, count int) {
 	for i := offset; i < limit; i++ { s.Buffer[i] -= 1 }
 }
 
-func (s *Stream) DecrementAll() {
+func (s *Vector) DecrementAll() {
 	for i := range s.Buffer { s.Buffer[i] -= 1 }
 }
 
-func (s *Stream) Negate(offset, count int) {
+func (s *Vector) Negate(offset, count int) {
 	var limit int
 	if len(s.Buffer) < (offset + count) {
 		limit = len(s.Buffer)
@@ -187,11 +187,27 @@ func (s *Stream) Negate(offset, count int) {
 	for i := offset; i < limit; i++ { s.Buffer[i] = -s.Buffer[i] }
 }
 
-func (s *Stream) NegateAll() {
+func (s *Vector) NegateAll() {
 	for i, e := range s.Buffer { s.Buffer[i] = -e }
 }
 
-func (s *Stream) ShiftLeft(offset int, o *Stream) {
+func (s *Vector) FNegate(offset, count int) {
+	var limit int
+	if len(s.Buffer) < (offset + count) {
+		limit = len(s.Buffer)
+	} else {
+		limit = offset + count
+	}
+	sfb := *(*[]float)(unsafe.Pointer(&s.Buffer))
+	for i := offset; i < limit; i++ { sfb[i] = -sfb[i] }
+}
+
+func (s *Vector) FNegateAll() {
+	sfb := *(*[]float)(unsafe.Pointer(&s.Buffer))
+	for i, _ := range s.Buffer { sfb[i] = -sfb[i] }
+}
+
+func (s *Vector) ShiftLeft(offset int, o *Vector) {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -201,7 +217,7 @@ func (s *Stream) ShiftLeft(offset int, o *Stream) {
 	for i := 0; i < limit; i++ { s.Buffer[i + offset] >>= uint(o.Buffer[i]) }
 }
 
-func (s *Stream) ShiftRight(offset int, o *Stream) {
+func (s *Vector) ShiftRight(offset int, o *Vector) {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -211,7 +227,7 @@ func (s *Stream) ShiftRight(offset int, o *Stream) {
 	for i := 0; i < limit; i++ { s.Buffer[i + offset] <<= uint(o.Buffer[i]) }
 }
 
-func (s *Stream) Invert(offset, count int) {
+func (s *Vector) Invert(offset, count int) {
 	var limit int
 	if len(s.Buffer) < (offset + count) {
 		limit = len(s.Buffer)
@@ -221,7 +237,7 @@ func (s *Stream) Invert(offset, count int) {
 	for i := offset; i < limit; i++ { s.Buffer[i] = ^s.Buffer[i] }
 }
 
-func (s *Stream) Equals(offset int, o *Stream) bool {
+func (s *Vector) Equals(offset int, o *Vector) bool {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -233,7 +249,7 @@ func (s *Stream) Equals(offset int, o *Stream) bool {
 	return t
 }
 
-func (s *Stream) EqualsZero(offset, count int) bool {
+func (s *Vector) EqualsZero(offset, count int) bool {
 	var limit int
 	if len(s.Buffer) < (offset + count) {
 		limit = len(s.Buffer)
@@ -245,7 +261,7 @@ func (s *Stream) EqualsZero(offset, count int) bool {
 	return t
 }
 
-func (s *Stream) LessThan(offset int, o *Stream) bool {
+func (s *Vector) LessThan(offset int, o *Vector) bool {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -257,7 +273,7 @@ func (s *Stream) LessThan(offset int, o *Stream) bool {
 	return t
 }
 
-func (s *Stream) LessThanZero(offset, count int) bool {
+func (s *Vector) LessThanZero(offset, count int) bool {
 	var limit int
 	if len(s.Buffer) < (offset + count) {
 		limit = len(s.Buffer)
@@ -269,7 +285,7 @@ func (s *Stream) LessThanZero(offset, count int) bool {
 	return t
 }
 
-func (s *Stream) GreaterThan(offset int, o *Stream) bool {
+func (s *Vector) GreaterThan(offset int, o *Vector) bool {
 	var limit int
 	if len(s.Buffer) < (len(o.Buffer) + offset) {
 		limit = len(s.Buffer)
@@ -281,7 +297,7 @@ func (s *Stream) GreaterThan(offset int, o *Stream) bool {
 	return t
 }
 
-func (s *Stream) GreaterThanZero(offset, count int) bool {
+func (s *Vector) GreaterThanZero(offset, count int) bool {
 	var limit int
 	if len(s.Buffer) < (offset + count) {
 		limit = len(s.Buffer)
@@ -293,5 +309,83 @@ func (s *Stream) GreaterThanZero(offset, count int) bool {
 	return t
 }
 
-func (b *Stream) Copy(o *Stream) {
+func (s *Vector) FEquals(offset int, o *Vector, tolerance float) bool {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	t := true
+	sfb := *(*[]float)(unsafe.Pointer(&s.Buffer))
+	ofb := *(*[]float)(unsafe.Pointer(&o.Buffer))
+	for i := 0; i < limit; i++ { t = t && math.Fabs(float64(sfb[i + offset] - ofb[i])) < float64(tolerance) }
+	return t
+}
+
+func (s *Vector) FEqualsZero(offset, count int, tolerance float) bool {
+	var limit int
+	if len(s.Buffer) < (offset + count) {
+		limit = len(s.Buffer)
+	} else {
+		limit = offset + count
+	}
+	t := true
+	sfb := *(*[]float)(unsafe.Pointer(&s.Buffer))
+	for i := offset; t && i < limit; i++ { t = t && math.Fabs(float64(sfb[i])) < float64(tolerance) }
+	return t
+}
+
+func (s *Vector) FLessThan(offset int, o *Vector) bool {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	sfb := *(*[]float)(unsafe.Pointer(&s.Buffer))
+	ofb := *(*[]float)(unsafe.Pointer(&o.Buffer))
+	t := true
+	for i := 0; i < limit; i++ { t = t && sfb[i + offset] < ofb[i] }
+	return t
+}
+
+func (s *Vector) FLessThanZero(offset, count int) bool {
+	var limit int
+	if len(s.Buffer) < (offset + count) {
+		limit = len(s.Buffer)
+	} else {
+		limit = offset + count
+	}
+	sfb := *(*[]float)(unsafe.Pointer(&s.Buffer))
+	t := true
+	for i := offset; t && i < limit; i++ { t = t && sfb[i] < 0 }
+	return t
+}
+
+func (s *Vector) FGreaterThan(offset int, o *Vector) bool {
+	var limit int
+	if len(s.Buffer) < (len(o.Buffer) + offset) {
+		limit = len(s.Buffer)
+	} else {
+		limit = len(o.Buffer) + offset
+	}
+	sfb := *(*[]float)(unsafe.Pointer(&s.Buffer))
+	ofb := *(*[]float)(unsafe.Pointer(&o.Buffer))
+	t := true
+	for i := 0; i < limit; i++ { t = t && sfb[i + offset] > ofb[i] }
+	return t
+}
+
+func (s *Vector) FGreaterThanZero(offset, count int) bool {
+	var limit int
+	if len(s.Buffer) < (offset + count) {
+		limit = len(s.Buffer)
+	} else {
+		limit = offset + count
+	}
+	sfb := *(*[]float)(unsafe.Pointer(&s.Buffer))
+	t := true
+	for i := offset; t && i < limit; i++ { t = t && sfb[i] > 0 }
+	return t
 }

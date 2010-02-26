@@ -1,13 +1,12 @@
 package vm
 import "testing"
-import "os"
 
-func defaultSynchronousChannel() chan *Stream {
-	return make(chan *Stream)
+func defaultSynchronousChannel() chan *Vector {
+	return make(chan *Vector)
 }
 
-func defaultAsynchronousChannel() chan *Stream {
-	return make(chan *Stream, 256)
+func defaultAsynchronousChannel() chan *Vector {
+	return make(chan *Vector, 256)
 }
 
 func defaultIOController() *IOController {
@@ -24,7 +23,6 @@ func checkChannelsAssigned(i *IOController, t *testing.T, channels int) {
 }
 
 func TestCreateIOController(t *testing.T) {
-	os.Stdout.WriteString("IOController Creation\n")
 	i := new(IOController)
 	i.Init()
 	checkChannelsAssigned(i, t, 0)
@@ -37,8 +35,7 @@ func TestCreateIOController(t *testing.T) {
 }
 
 func TestIOControllerTraffic(t *testing.T) {
-	os.Stdout.WriteString("IOController Traffic\n")
 	i := defaultIOController()
-	i.Send(0, sixIntegerStream())
-	checkStream(i.Receive(0), sixIntegerStream(), t, true)
+	i.Send(0, sixIntegerVector())
+	checkVector(i.Receive(0), sixIntegerVector(), t, true)
 }

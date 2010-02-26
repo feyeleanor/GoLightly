@@ -5,7 +5,7 @@ GOFILES=\
 	program.go\
 	instruction_set.go\
 	buffer.go\
-	stream.go\
+	vector.go\
 	iocontroller.go\
 	processor_core.go\
 
