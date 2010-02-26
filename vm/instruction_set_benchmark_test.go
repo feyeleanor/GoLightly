@@ -34,13 +34,13 @@ func BenchmarkInitInstructionSet(b *testing.B) {
 func BenchmarkDefineInstruction(b *testing.B) {
 	in := new(InstructionSet)
 	in.Init()
-	for i := 0; i < b.N; i++ { in.Define(fmt.Sprintf("%v", i), func(o *OpCode) {}) }
+	for i := 0; i < b.N; i++ { in.Define(fmt.Sprintf("%v", i), func(o *Buffer) {}) }
 }
 
 func defaultBMInstructionSet() *InstructionSet {
 	in := new(InstructionSet)
 	in.Init()
-	for i := 0; i < 1000; i++ { in.Define(fmt.Sprintf("%v", i), func(o *OpCode) {}) }
+	for i := 0; i < 1000; i++ { in.Define(fmt.Sprintf("%v", i), func(o *Buffer) {}) }
 	return in
 }
 

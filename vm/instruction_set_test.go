@@ -10,11 +10,11 @@ func opcode(i int) *OpCode {
 func defaultInstructionSet() *InstructionSet {
 	i := new(InstructionSet)
 	i.Init()
-	i.Define("zero",	func (o *OpCode)	{ REGISTER = 0 })
-	i.Define("one",		func (o *OpCode)	{ REGISTER = 1 })
-	i.Define("two",		func (o *OpCode)	{ REGISTER = 2 })
-	i.Define("three",	func (o *OpCode)	{ REGISTER = 3 })
-	i.Define("four",	func (o *OpCode)	{ REGISTER = 4 })
+	i.Define("zero",	func (o *Buffer) { REGISTER = 0 })
+	i.Define("one",		func (o *Buffer) { REGISTER = 1 })
+	i.Define("two",		func (o *Buffer) { REGISTER = 2 })
+	i.Define("three",	func (o *Buffer) { REGISTER = 3 })
+	i.Define("four",	func (o *Buffer) { REGISTER = 4 })
 	return i
 }
 
@@ -34,7 +34,7 @@ func checkDefaultInstructionSet(i *InstructionSet, t *testing.T) {
 
 func checkInstructionInvocation(i *InstructionSet, t *testing.T) {
 	for j, f := range i.ops {
-		f.(func (o *OpCode))(opcode(j))
+		f.(func (o *Buffer))(&opcode(j).data)
 		compareValues(i, t, REGISTER, j)
 	}
 	for j := 0; j < i.Len(); j++ {

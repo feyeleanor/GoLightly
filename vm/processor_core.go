@@ -89,75 +89,75 @@ func (p *ProcessorCore) Clone(c chan *Vector) (q *ProcessorCore, i int) {
 	return
 }
 func (p *ProcessorCore) DefineInstructions() {
-	p.Define("noop",	func (o *OpCode) {})						//	NOOP
-	p.Define("nsleep",	func (o *OpCode) {							//	NSLEEP	n
-		syscall.Sleep(int64(o.data[0]))
+	p.Define("noop",	func (o *Buffer) {})						//	NOOP
+	p.Define("nsleep",	func (o *Buffer) {							//	NSLEEP	n
+		syscall.Sleep(int64((*o)[0]))
 	})
-	p.Define("sleep",	func (o *OpCode) {							//	SLEEP	n
-		syscall.Sleep(int64(o.data[0]) << 32)
+	p.Define("sleep",	func (o *Buffer) {							//	SLEEP	n
+		syscall.Sleep(int64((*o)[0]) << 32)
 	})
-	p.Define("halt",	func (o *OpCode) { p.Running = false })		//	HALT
-	p.Define("jmp",		func (o *OpCode) {							//	JMP		n
-		p.JumpRelative(o.data[0])
+	p.Define("halt",	func (o *Buffer) { p.Running = false })		//	HALT
+	p.Define("jmp",		func (o *Buffer) {							//	JMP		n
+		p.JumpRelative((*o)[0])
 	})
-	p.Define("jmpz",	func (o *OpCode) {							//	JMPZ	r, n
-		if p.R.Buffer.EqualsZero(o.data[0]) { p.JumpRelative(o.data[1]) }
+	p.Define("jmpz",	func (o *Buffer) {							//	JMPZ	r, n
+		if p.R.Buffer.EqualsZero((*o)[0]) { p.JumpRelative((*o)[1]) }
 	})
-	p.Define("jmpnz",	func (o *OpCode) {							//	JMPNZ	r, n
-		if !p.R.Buffer.EqualsZero(o.data[0]) { p.JumpRelative(o.data[1]) }
+	p.Define("jmpnz",	func (o *Buffer) {							//	JMPNZ	r, n
+		if !p.R.Buffer.EqualsZero((*o)[0]) { p.JumpRelative((*o)[1]) }
 	})
-	p.Define("call",	func (o *OpCode) {							//	CALL	n
-		p.Call(o.data[0])
+	p.Define("call",	func (o *Buffer) {							//	CALL	n
+		p.Call((*o)[0])
 	})
-	p.Define("ret",		func (o *OpCode) { p.Return() })			//	RET
-	p.Define("push",	func (o *OpCode) {							//	PUSH	r
-		p.data_stack.Push(p.R.At(o.data[0]))
+	p.Define("ret",		func (o *Buffer) { p.Return() })			//	RET
+	p.Define("push",	func (o *Buffer) {							//	PUSH	r
+		p.data_stack.Push(p.R.At((*o)[0]))
 	})
-	p.Define("pop",		func (o *OpCode) {							//	POP		r
-		p.R.Set(o.data[0], p.data_stack.Pop())
+	p.Define("pop",		func (o *Buffer) {							//	POP		r
+		p.R.Set((*o)[0], p.data_stack.Pop())
 	})
-	p.Define("cld",		func (o *OpCode) {							//	CLD		r, v
-		p.R.Set(o.data[0], o.data[1])
+	p.Define("cld",		func (o *Buffer) {							//	CLD		r, v
+		p.R.Set((*o)[0], (*o)[1])
 	})
-	p.Define("send",	func (o *OpCode) {							//	SEND	c
-		p.IOController.Send(o.data[0], p.M)
+	p.Define("send",	func (o *Buffer) {							//	SEND	c
+		p.IOController.Send((*o)[0], p.M)
 	})
-	p.Define("recv",	func (o *OpCode) {							//	RECV	c
-		p.M = p.IOController.Receive(o.data[0])
+	p.Define("recv",	func (o *Buffer) {							//	RECV	c
+		p.M = p.IOController.Receive((*o)[0])
 	})
-	p.Define("inc",		func (o *OpCode) {							//	INC		r
-		p.R.Buffer.Increment(o.data[0])
+	p.Define("inc",		func (o *Buffer) {							//	INC		r
+		p.R.Buffer.Increment((*o)[0])
 	})
-	p.Define("dec",		func (o *OpCode) {							//	DEC		r
-		p.R.Buffer.Decrement(o.data[0])
+	p.Define("dec",		func (o *Buffer) {							//	DEC		r
+		p.R.Buffer.Decrement((*o)[0])
 	})
-	p.Define("add",		func (o *OpCode) {							//	ADD		r1, r2
-		p.R.Buffer.Add(o.data[0], o.data[1])
+	p.Define("add",		func (o *Buffer) {							//	ADD		r1, r2
+		p.R.Buffer.Add((*o)[0], (*o)[1])
 	})
-	p.Define("sub",		func (o *OpCode) {							//	SUB		r1, r2
-		p.R.Buffer.Subtract(o.data[0], o.data[1])
+	p.Define("sub",		func (o *Buffer) {							//	SUB		r1, r2
+		p.R.Buffer.Subtract((*o)[0], (*o)[1])
 	})
-	p.Define("mul",		func (o *OpCode) {							//	MUL		r1, r2
-		p.R.Buffer.Multiply(o.data[0], o.data[1])
+	p.Define("mul",		func (o *Buffer) {							//	MUL		r1, r2
+		p.R.Buffer.Multiply((*o)[0], (*o)[1])
 	})
-	p.Define("div",		func (o *OpCode) {							//	DIV		r1, r2
-		if p.R.At(o.data[1]) == 0 {
+	p.Define("div",		func (o *Buffer) {							//	DIV		r1, r2
+		if p.R.At((*o)[1]) == 0 {
 			p.DivideByZero()
 		} else {
-			p.R.Buffer.Divide(o.data[0], o.data[1])
+			p.R.Buffer.Divide((*o)[0], (*o)[1])
 		}
 	})
-	p.Define("and",		func (o *OpCode) {							//	AND		r1, r2
-		p.R.Buffer.And(o.data[0], o.data[1])
+	p.Define("and",		func (o *Buffer) {							//	AND		r1, r2
+		p.R.Buffer.And((*o)[0], (*o)[1])
 	})
-	p.Define("or",		func (o *OpCode) {							//	OR		r1, r2
-		p.R.Buffer.Or(o.data[0], o.data[1])
+	p.Define("or",		func (o *Buffer) {							//	OR		r1, r2
+		p.R.Buffer.Or((*o)[0], (*o)[1])
 	})
-	p.Define("xor",		func (o *OpCode) {							//	XOR		r1, r2
-		p.R.Buffer.Xor(o.data[0], o.data[1])
+	p.Define("xor",		func (o *Buffer) {							//	XOR		r1, r2
+		p.R.Buffer.Xor((*o)[0], (*o)[1])
 	})
-//	p.Define("malloc",	func (o *OpCode) { p.R.PutBuffer(o.a, p.MMU.Allocate(o.b)) })					//	MALLOC	r, n
-//	p.Define("select",	func (o *OpCode) { p.M = p.R.GetBuffer(o.a) })									//	SELECT	r
+//	p.Define("malloc",	func (o *Buffer) { p.R.PutBuffer((*o)[0], p.MMU.Allocate((*o)[1])) })				//	MALLOC	r, n
+//	p.Define("select",	func (o *Buffer) { p.M = p.R.GetBuffer((*o)[0]) })									//	SELECT	r
 }
 func (p *ProcessorCore) ValidPC() bool {
 	return (p.PC > -1) && (p.PC < len(p.program)) && p.Running
