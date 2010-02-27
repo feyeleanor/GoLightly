@@ -5,15 +5,11 @@ package vm
 import "testing"
 
 func sixIntegerVector() *Vector {
-	s := new(Vector)
-	s.Buffer = *sixIntegerBuffer()
-	return s
+	return &Vector{*sixIntegerBuffer()}
 }
 
 func sixFloatVector() *Vector {
-	s := new(Vector)
-	s.Buffer = *sixFloatBuffer()
-	return s
+	return &Vector{*sixFloatBuffer()}
 }
 
 func checkVector(s, o *Vector, t *testing.T, value bool) {

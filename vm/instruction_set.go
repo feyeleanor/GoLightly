@@ -50,9 +50,9 @@ func (i *InstructionSet) Code(name string) int {
 	}
 	return -1
 }
-func (i *InstructionSet) OpCode(name string, a, b, c int) *OpCode {
+func (i *InstructionSet) OpCode(name string, data *Buffer) *OpCode {
 	if op := i.Code(name); op != -1 {
-		return &OpCode{code: op, data: []int{a, b, c}}
+		return &OpCode{op, *data}
 	}
 	return nil
 }

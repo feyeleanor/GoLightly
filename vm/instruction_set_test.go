@@ -4,7 +4,7 @@ import "testing"
 var REGISTER int
 
 func opcode(i int) *OpCode {
-	return &OpCode{code: i}
+	return &OpCode{i, nil}
 }
 
 func defaultInstructionSet() *InstructionSet {
@@ -20,7 +20,6 @@ func defaultInstructionSet() *InstructionSet {
 
 func checkInstructionExists(name string, i *InstructionSet, t *testing.T) {
 	_, ok := i.tokens[name]
-	compareValues(i, t, ok, true)
 	compareValues(i, t, ok, true)
 }
 
@@ -51,10 +50,12 @@ func checkInstructionSearch(i *InstructionSet, t *testing.T) {
 
 func checkInstructionCompilation(i *InstructionSet, t *testing.T) {
 	zero, one := i.Code("zero"), i.Code("one")
-	compareValues(i, t, i.OpCode("zero", 0, 0, 0).Identical(&OpCode{code: zero, data: []int{0, 0, 0}}), true)
-	compareValues(i, t, i.OpCode("zero", 1, 0, 0).Identical(&OpCode{code: zero, data: []int{0, 0, 0}}), false)
-	compareValues(i, t, i.OpCode("one", 0, 0, 0).Similar(&OpCode{code: one, data: []int{1, 0, 0}}), true)
-	compareValues(i, t, i.OpCode("zero", 1, 0, 0).Similar(&OpCode{code: one, data: []int{1, 0, 0}}), false)
+	p := Buffer{1}
+	q := Buffer{0}
+	compareValues(i, t, i.OpCode("zero", &q).Identical(&OpCode{zero, q}), true)
+	compareValues(i, t, i.OpCode("zero", &p).Identical(&OpCode{zero, nil}), false)
+	compareValues(i, t, i.OpCode("one", &q).Similar(&OpCode{one, p}), true)
+	compareValues(i, t, i.OpCode("zero", &p).Similar(&OpCode{one, p}), false)
 }
 
 func TestInstructionSetCreation(t *testing.T) {

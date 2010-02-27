@@ -2,10 +2,7 @@ package vm
 import "testing"
 
 func oneIntegerVector() *Vector {
-	s := new(Vector)
-	s.Init(1)
-	s.Buffer.Set(0, 100)
-	return s
+	return &Vector{Buffer{100}}
 }
 
 func oneFloatVector() *Vector {
@@ -16,9 +13,7 @@ func oneFloatVector() *Vector {
 }
 
 func twoIntegerVector() *Vector {
-	s := new(Vector)
-	s.Buffer = *twoIntegerBuffer()
-	return s
+	return &Vector{*twoIntegerBuffer()}
 }
 
 func twoFloatVector() *Vector {

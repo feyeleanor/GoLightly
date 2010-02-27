@@ -50,24 +50,24 @@ func TestMMU(t *testing.T) {
 }
 
 func defaultProgram(p *ProcessorCore) *[]*OpCode {
-	cld := p.OpCode("cld", 0, 37, 0)								//	cld		0, 37
-	inc := p.OpCode("inc", 0, 0, 0)									//	inc		0
-	dec := p.OpCode("dec", 0, 0, 0)									//	dec		0
-	ill := &OpCode{code: 99}										//	illegal operation
+	cld := p.OpCode("cld", &Buffer{0, 37, 0})				//	cld		0, 37
+	inc := p.OpCode("inc", &Buffer{0, 0, 0})				//	inc		0
+	dec := p.OpCode("dec", &Buffer{0, 0, 0})				//	dec		0
+	ill := &OpCode{code: 99}								//	illegal operation
 	return &[]*OpCode {cld, inc, inc, dec, inc, dec, dec, ill}
 }
 
 func advancedProgram(p *ProcessorCore) *[]*OpCode {
 	return &[]*OpCode{
-		p.OpCode("cld",		0,	1000,	0),			//	0	cld		R0, 1000
-		p.OpCode("call",	5,	0,		0),			//	1	call	5
-		p.OpCode("dec",		0,	0,		0),			//	2	dec		R0
-		p.OpCode("jmpnz",	0,	-2,		0),			//	3	jmpnz	R0, -2
-		p.OpCode("halt",	0,	0,		0),			//	4	halt
-		p.OpCode("push",	0,	0,		0),			//	5	push	R0
-		p.OpCode("inc",		1,	0,		0),			//	6	inc		R1
-		p.OpCode("pop",		0,	0,		0),			//	7	pop		R0
-		p.OpCode("ret",		0,	0,		0),			//	8	ret
+		p.OpCode("cld",		&Buffer{0, 1000,	0}),		//	0	cld		R0, 1000
+		p.OpCode("call",	&Buffer{5, 0,	0}),			//	1	call	5
+		p.OpCode("dec",		&Buffer{0, 0,	0}),			//	2	dec		R0
+		p.OpCode("jmpnz",	&Buffer{0, -2,	0}),			//	3	jmpnz	R0, -2
+		p.OpCode("halt",	&Buffer{0, 0,	0}),			//	4	halt
+		p.OpCode("push",	&Buffer{0, 0,	0}),			//	5	push	R0
+		p.OpCode("inc",		&Buffer{1, 0,	0}),			//	6	inc		R1
+		p.OpCode("pop",		&Buffer{0, 0,	0}),			//	7	pop		R0
+		p.OpCode("ret",		&Buffer{0, 0,	0}),			//	8	ret
 	}
 }
 

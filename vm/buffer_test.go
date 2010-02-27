@@ -7,24 +7,13 @@ import "math"
 var predicate_index int
 
 func twoIntegerBuffer() *Buffer {
-	b := new(Buffer)
-	b.Init(2)
-	b.Set(0, 100)
-	b.Set(1, 200)
-	return b
+	return &Buffer{100, 200}
 }
 
 func sixIntegerBuffer() *Buffer {
-	b := new(Buffer)
-	b.Init(6)
-	b.Set(0, 37)
-	b.Set(1, int(byte("hello world"[1])))		//	ASCII == 101
+	c := "hello world"[1]
 	f := 3.7
-	b.Set(2, int(f))
-	b.Set(3, 5)
-	b.Set(4, 2)
-	b.Set(5, 2)
-	return b
+	return &Buffer{37, int(byte(c)), int(f), 5, 2, 2}
 }
 
 func sixFloatBuffer() *Buffer {
