@@ -57,7 +57,9 @@ func (i *InstructionSet) OpCode(name string, data *Buffer) *OpCode {
 	return nil
 }
 func (i *InstructionSet) Invoke(o *OpCode) bool {
-	if o.code < 0 || o.code >= i.ops.Len() { return false }
+	if o.code < 0 || o.code >= i.Len() {
+		return false
+	}
 	i.ops.At(o.code).(func (o *Buffer))(&o.data)
 	return true
 }

@@ -25,14 +25,6 @@ func BenchmarkValidPC(b *testing.B) {
    for i := 0; i < b.N; i++ { p.ValidPC() }
 }
 
-func BenchmarkResetState(b *testing.B) {
-	b.StopTimer()
-	p := new(ProcessorCore)
-	p.Init(32, nil)
-	b.StartTimer()
-    for i := 0; i < b.N; i++ { p.ResetState() }
-}
-
 func BenchmarkLoadProgram(b *testing.B) {
 	b.StopTimer()
 	p := new(ProcessorCore)
@@ -84,6 +76,19 @@ func BenchmarkStepExecuteRewind(b *testing.B) {
 	}
 }
 
+func BenchmarkStepExecuteInlineRewind(b *testing.B) {
+	b.StopTimer()
+	p := new(ProcessorCore)
+	p.Init(32, nil)
+	p.LoadProgram(defaultProgram(p))
+	b.StartTimer()
+    for i := 0; i < b.N; i++ {
+		p.StepForward()
+		p.ExecuteInline()
+		p.StepBack()
+	}
+}
+
 func BenchmarkJumpTo(b *testing.B) {
 	b.StopTimer()
 	p := new(ProcessorCore)
@@ -108,7 +113,7 @@ func BenchmarkProgramRun(b *testing.B) {
 	p.Init(32, nil)
 	p.LoadProgram(advancedProgram(p))
 	b.StartTimer()
-    for i := 0; i < b.N; i++ { p.Run() }
+    for i := 0; i < b.N; i++ { p.Run(); p.ResetState() }
 }
 
 func BenchmarkProgramRunInline(b *testing.B) {
@@ -117,5 +122,5 @@ func BenchmarkProgramRunInline(b *testing.B) {
 	p.Init(32, nil)
 	p.LoadProgram(advancedProgram(p))
 	b.StartTimer()
-    for i := 0; i < b.N; i++ { p.RunInline() }
+    for i := 0; i < b.N; i++ { p.RunInline(); p.ResetState() }
 }

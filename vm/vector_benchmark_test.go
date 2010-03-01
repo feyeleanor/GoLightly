@@ -7,7 +7,7 @@ func oneIntegerVector() *Vector {
 
 func oneFloatVector() *Vector {
 	s := new(Vector)
-	s.Init(1)
+	s.Resize(1)
 	s.Buffer.FSet(0, 100.00)
 	return s
 }
@@ -18,7 +18,7 @@ func twoIntegerVector() *Vector {
 
 func twoFloatVector() *Vector {
 	s := new(Vector)
-	s.Init(2)
+	s.Resize(2)
 	s.Buffer.Set(0, 100.00)
 	s.Buffer.Set(1, 200.00)
 	return s

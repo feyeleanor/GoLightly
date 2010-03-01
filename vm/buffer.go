@@ -72,7 +72,6 @@ func (b *Buffer) Replicate(count int) *Buffer {
 	return s
 }
 
-func (b *Buffer) Init(length int)						{ b.Resize(length) }
 func (b *Buffer) Len() int								{ return len(*b) }
 func (b *Buffer) Cap() int								{ return cap(*b) }
 func (b *Buffer) At(i int) int							{ return (*b)[i] }
@@ -97,6 +96,7 @@ func (b *Buffer) And(i, j int)							{ (*b)[i] &= (*b)[j] }
 func (b *Buffer) Or(i, j int)							{ (*b)[i] |= (*b)[j] }
 func (b *Buffer) Xor(i, j int)							{ (*b)[i] ^= (*b)[j] }
 func (b *Buffer) Clear(i int)							{ (*b)[i] = 0 }
+func (b *Buffer) ClearAll()								{ for i := range *b { (*b)[i] = 0 } }
 func (b *Buffer) Increment(i int)						{ (*b)[i] += 1 }
 func (b *Buffer) Decrement(i int)						{ (*b)[i] -= 1 }
 func (b *Buffer) Negate(i int)							{ (*b)[i] = -(*b)[i] }

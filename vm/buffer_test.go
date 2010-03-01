@@ -18,7 +18,7 @@ func sixIntegerBuffer() *Buffer {
 
 func sixFloatBuffer() *Buffer {
 	b := new(Buffer)
-	b.Init(6)
+	b.Resize(6)
 	b.FSet(0, 37.0)
 	b.FSet(1, float("e"[0]))					//	ASCII == 101.0
 	b.FSet(2, 3.7)
