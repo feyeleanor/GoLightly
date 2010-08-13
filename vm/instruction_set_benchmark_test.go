@@ -55,7 +55,7 @@ func BenchmarkInstructionToOpCode(b *testing.B) {
 	b.StopTimer()
 	in := defaultBMInstructionSet()
 	b.StartTimer()
-	for i := 0; i < b.N; i++ { in.OpCode("3", &[]int{1, 2, 3}) }
+	for i := 0; i < b.N; i++ { in.OpCode("3", &Buffer{1, 2, 3}) }
 }
 
 func BenchmarkInstructionInvocation(b *testing.B) {
