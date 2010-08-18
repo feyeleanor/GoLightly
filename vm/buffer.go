@@ -100,8 +100,8 @@ func (b *Buffer) ClearAll()								{ for i := range *b { (*b)[i] = 0 } }
 func (b *Buffer) Increment(i int)						{ (*b)[i] += 1 }
 func (b *Buffer) Decrement(i int)						{ (*b)[i] -= 1 }
 func (b *Buffer) Negate(i int)							{ (*b)[i] = -(*b)[i] }
-func (b *Buffer) ShiftLeft(i, j int)					{ (*b)[i] >>= uint((*b)[j]) }
-func (b *Buffer) ShiftRight(i, j int)					{ (*b)[i] <<= uint((*b)[j]) }
+func (b *Buffer) ShiftLeft(i, j int)					{ (*b)[i] <<= uint((*b)[j]) }
+func (b *Buffer) ShiftRight(i, j int)					{ (*b)[i] >>= uint((*b)[j]) }
 func (b *Buffer) Invert(i int)							{ (*b)[i] = ^(*b)[i] }
 func (b *Buffer) Equals(i, j int) bool					{ return (*b)[i] == (*b)[j] }
 func (b *Buffer) EqualsZero(i int) bool					{ return (*b)[i] == 0 }

@@ -120,11 +120,12 @@ func TestBufferFloatingPointMaths(t *testing.T) {
 func TestBufferBitOperators(t *testing.T) {
 	b := sixIntegerBuffer()									//	b[0] == 37, b[5] == 2
 	b.ShiftRight(0, 5)
-	compareValues(b, t, b.At(0), 148)
+	compareValues(b, t, b.At(0), 9)
 	b.ShiftLeft(0, 5)
-	compareValues(b, t, b.At(0), 37)
+	compareValues(b, t, b.At(0), 36)
 	b.Invert(0)
-	compareValues(b, t, b.At(0), ^37)
+	compareValues(b, t, b.At(0), ^36)
+	compareValues(b, t, b.At(0), -37)
 }
 
 func TestBufferIntegerLogic(t *testing.T) {

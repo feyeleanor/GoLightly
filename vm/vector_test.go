@@ -107,11 +107,12 @@ func TestFloatingPointMaths(t *testing.T) {
 func TestVectorBitOperators(t *testing.T) {
 	s := sixIntegerVector()									//	b[0] == 37, b[5] == 2
 	s.Buffer.ShiftRight(0, 5)
-	compareValues(s, t, s.At(0), 148)
+	compareValues(s, t, s.At(0), 9)
 	s.Buffer.ShiftLeft(0, 5)
-	compareValues(s, t, s.At(0), 37)
+	compareValues(s, t, s.At(0), 36)
 	s.Buffer.Invert(0)
-	compareValues(s, t, s.At(0), ^37)
+	compareValues(s, t, s.At(0), ^36)
+	compareValues(s, t, s.At(0), -37)
 }
 
 //func TestLogic(t *testing.T) {
