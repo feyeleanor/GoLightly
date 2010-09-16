@@ -1,10 +1,10 @@
 == About GoLightly ==
 
-GoLightly is a lightweight virtual machine implementation in Go, designed for flexibility and reuse.
-Traditionally popular VMs have adopted a stack-based design as this is perceived to be easier to
-implement than the register-based design that real-world hardware generally uses. There are arguments
-both ways on which of the two approaches is 'better' and it's not our intention to mandate either: a
-good VM toolkit should leave that decision to those who know which suits their purpose best.
+GoLightly is a lightweight virtual machine library implemented in Go, designed for flexibility and
+reuse. Traditionally popular VMs have adopted a stack-based design as this is perceived to be easier
+to implement than the register-based design that real-world hardware generally uses. There are
+arguments both ways on which of the two approaches is 'better' and it's not our intention to mandate
+either: a good VM toolkit should leave that decision to those who know which suits their purpose best.
 
 However just because GoLightly adopts a careful neutrality on this issue doesn't mean that it has
 nothing fresh to offer.
@@ -32,16 +32,23 @@ and speculative execution.
 
 == Tests and Benchmarks ==
 
-GoLightly includes a test suite which can be invoked from the command-line as follows:
+Golightly includes a large collection of tests and benchmarks. A simple set of micro-benchmarks
+is available to judge the relative cost of various standard Go instructions and idioms which can
+be invoked from the command-line:
+
+	cd go
+	gotest -benchmarks="Benchmark"
+
+
+Likewise the test suite for the VM primitives can be executed with:
 
 	cd vm
 	gotest
 
-or to include the optional benchmarks:
+and the optional benchmarks invoked with:
 
-	cd vm
 	gotest -benchmarks="Benchmark"
 
-these include extensive micro-benchmarks focusing on individual primitive operation performance which
+These include extensive micro-benchmarks focusing on individual primitive operation performance which
 will hopefully act as a useful guide to relative performance for those writing compilers or assemblers
 targeting GoLightly virtual machines.
