@@ -2,6 +2,7 @@ include $(GOROOT)/src/Make.inc
 
 TARG=feyeleanor/golightly/vm
 GOFILES=\
+	utility.go\
 	instruction_set.go\
 	buffer.go\
 	vector.go\

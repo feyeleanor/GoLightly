@@ -32,36 +32,43 @@ func BenchmarkInitInstructionSet(b *testing.B) {
 }
 
 func BenchmarkDefineInstruction(b *testing.B) {
-	in := new(InstructionSet)
-	in.Init()
+	b.StopTimer()
+		in := new(InstructionSet)
+		in.Init()
+	b.StartTimer()
 	for i := 0; i < b.N; i++ { in.Define(fmt.Sprintf("%v", i), func(o *Buffer) {}) }
-}
-
-func defaultBMInstructionSet() *InstructionSet {
-	in := new(InstructionSet)
-	in.Init()
-	for i := 0; i < 1000; i++ { in.Define(fmt.Sprintf("%v", i), func(o *Buffer) {}) }
-	return in
 }
 
 func BenchmarkInstructionToCode(b *testing.B) {
 	b.StopTimer()
-	in := defaultBMInstructionSet()
+		in := new(InstructionSet)
+		in.Init()
+		for i := 0; i < 1000; i++ {
+			in.Define(fmt.Sprintf("%v", i), func(o *Buffer) {})
+		}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ { in.Code("3") }
 }
 
 func BenchmarkInstructionToOpCode(b *testing.B) {
 	b.StopTimer()
-	in := defaultBMInstructionSet()
+		in := new(InstructionSet)
+		in.Init()
+		for i := 0; i < 1000; i++ {
+			in.Define(fmt.Sprintf("%v", i), func(o *Buffer) {})
+		}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ { in.OpCode("3", &Buffer{1, 2, 3}) }
 }
 
 func BenchmarkInstructionInvocation(b *testing.B) {
 	b.StopTimer()
-	in := defaultBMInstructionSet()
-	op := OpCode{3, nil}
+		in := new(InstructionSet)
+		in.Init()
+		for i := 0; i < 1000; i++ {
+			in.Define(fmt.Sprintf("%v", i), func(o *Buffer) {})
+		}
+		op := OpCode{3, nil}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ { in.Invoke(&op) }
 }

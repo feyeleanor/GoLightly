@@ -1,20 +1,11 @@
-//	TODO: 	Refactor tests as specs
-//	TODO:	Add tests for InstructionSet handling
-//	TODO:	Add tests for ProcessorCore cloning
-//	TODO:	Add tests for IOController handling
-
 package vm
+
 import "testing"
+import . "golightly/test"
 
 const BUFFER_ALLOCATION = 32
 
-func checkAllocatedVector(s *Vector, t *testing.T) {
-	compareValues(s, t, s.Len(), BUFFER_ALLOCATION)
-	compareValues(s, t, s.Cap(), BUFFER_ALLOCATION)
-	for i := 0; i < s.Len(); i++ { compareValues(s, t, s.At(i), 0) }
-}
-
-func defaultProgram(p *ProcessorCore) *Program {
+func simpleProgram(p *ProcessorCore) *Program {
 	code := []*OpCode{
 		p.OpCode("cld", &Buffer{0, 37, 0}),				//	cld		0, 37
 		p.OpCode("inc", &Buffer{0, 0, 0}),				//	inc		0
@@ -43,86 +34,109 @@ func advancedProgram(p *ProcessorCore) *Program {
 	return &Program{code: code}
 }
 
-func checkProcessorInitialised(p *ProcessorCore, t *testing.T) {
-	checkAllocatedVector(p.R, t)
-	compareValues(p, t, p.Running, false)
-	compareValues(p, t, p.pc, 0)
-	compareValues(p, t, p.M == nil, true)	
-}
+func TestProcessorCore(t *testing.T) {
+	NewTest(t).
+	Run("Creation", func(TC *Test) {
+		p := new(ProcessorCore)
+		p.Init(BUFFER_ALLOCATION, nil)
+		for i := 0; i < p.R.Len(); i++ {
+			TC.	Identical(p.R.At(i), 0)
+		}
+		TC.	Identical(BUFFER_ALLOCATION, p.R.Len(), p.R.Cap()).
+			Refute(p.Running).
+			Refute(p.ValidPC()).
+			Identical(p.pc, 0).
+			Confirm(p.M == nil)
+	}).
+	Run("Basic Instruction Stepping", func(TC *Test) {
+		p := new(ProcessorCore)
+		p.Init(BUFFER_ALLOCATION, nil)
 
-func TestProcessorCoreCreation(t *testing.T) {
-	p := new(ProcessorCore)
-	p.Init(BUFFER_ALLOCATION, nil)
-	checkProcessorInitialised(p, t)
-}
+		program := simpleProgram(p)
+		p.LoadProgram(program)
+		TC.	Identical(p.I(), program.code[0]).
+			Identical(p.pc, 0).
+			Confirm(p.Program.ValidPC()).
+			Refute(p.ValidPC())
 
-func checkInstruction(p *ProcessorCore, t *testing.T, program *Program, pc int) {
-	compareValues(p, t, p.I().Identical(program.code[pc]), true)
-	compareValues(p, t, p.pc, pc)
-}
+		p.StepForward()
+		TC.	Identical(p.I(), program.code[1]).
+			Identical(p.pc, 1).
+			Confirm(p.Program.ValidPC()).
+			Refute(p.ValidPC())
 
-func resetProcessor(p *ProcessorCore, t *testing.T) {
-	p.ResetState()
-	checkProcessorInitialised(p, t)
-}
+		p.StepBack()
+		TC.	Identical(p.I(), program.code[0]).
+			Identical(p.pc, 0).
+			Confirm(p.Program.ValidPC()).
+			Refute(p.ValidPC())
 
-func checkFlowControl(p *ProcessorCore, t *testing.T, program *Program) {
-	checkInstruction(p, t, program, 0)
-	p.StepForward()
-	checkInstruction(p, t, program, 1)
-	p.StepBack()
-	checkInstruction(p, t, program, 0)
-	p.StepForward()
-	checkInstruction(p, t, program, 1)
-	p.JumpTo(program.Len())
-	compareValues(p, t, p.Program.ValidPC(), true)
-	compareValues(p, t, p.ValidPC(), false)
-	p.StepForward()
-	compareValues(p, t, p.Program.ValidPC(), false)
-	compareValues(p, t, p.ValidPC(), false)
-	resetProcessor(p, t)
-	compareValues(p, t, p.Program.ValidPC(), true)
-	compareValues(p, t, p.ValidPC(), false)
-}
+		p.JumpTo(program.Len())
+		TC.	Confirm(p.Program.ValidPC()).
+			Identical(program.Len() - 1, p.pc).
+			Refute(p.ValidPC())
 
-func checkProgramExecution(p *ProcessorCore, t *testing.T) {
-	compareValues(p, t, p.Program.Len(), defaultProgram(p).Len())
-	p.Execute()																//	program[0]
-	compareValues(p, t, p.R.At(0), 37)
-	p.StepForward()
-	p.Execute()
-	compareValues(p, t, p.R.At(0), 38)										//	program[1]
-	resetProcessor(p, t)
-	p.StepForward()
-	p.Execute()
-	compareValues(p, t, p.R.At(0), 1)										//	program[1]
-	resetProcessor(p, t)
-	p.Run()																	//	program[7] is an illegal instruction
-	compareValues(p, t, p.Running, false)
-	compareValues(p, t, p.Illegal_Operation, true)
-	compareValues(p, t, p.pc, p.Program.Len() - 1)							//	terminated without executing program[7]
-	compareValues(p, t, p.R.At(0), 37)
-	p.Program.code[7] = &OpCode{code: p.Code("cld"), data: Buffer{1, 100}}	//	replace program[7] with cld 1, 100
-	resetProcessor(p, t)
-	p.Run()
-	compareValues(p, t, p.Running, false)
-	compareValues(p, t, p.Illegal_Operation, false)
-	compareValues(p, t, p.pc, p.Program.Len())								//	terminated with all instructions executed
-	compareValues(p, t, p.R.At(0), 37)
-	compareValues(p, t, p.R.At(1), 100)
-}
+		p.StepForward()
+		TC.	Refute(p.Program.ValidPC()).
+			Refute(p.ValidPC())
 
-func TestProcessorCoreExecution(t *testing.T) {
-	p := new(ProcessorCore)
-	p.Init(BUFFER_ALLOCATION, nil)
-	checkProcessorInitialised(p, t)
-	compareValues(p, t, p.ValidPC(), false)
-	program := defaultProgram(p)
-	p.LoadProgram(program)
-	checkFlowControl(p, t, program)
-	checkProgramExecution(p, t)
-	p.LoadProgram(advancedProgram(p))
-	p.Run()
-	compareValues(p, t, p.R.At(0), 0)
-	compareValues(p, t, p.R.At(1), 1000)
+		p.ResetState()
+		for i := 0; i < p.R.Len(); i++ {
+			TC.	Identical(p.R.At(i), 0)
+		}
+		TC.	Identical(BUFFER_ALLOCATION, p.R.Len(), p.R.Cap()).
+			Refute(p.Running).
+			Identical(p.pc, 0).
+			Confirm(p.M == nil).
+			Confirm(p.Program.ValidPC()).
+			Refute(p.ValidPC()).
+			Identical(p.Program.Len(), program.Len())
+	}).
+	Run("Execution", func(TC *Test) {
+		p := new(ProcessorCore)
+		p.Init(BUFFER_ALLOCATION, nil)
+
+		program := simpleProgram(p)
+		p.LoadProgram(program)
+		p.Execute()												//	program[0]
+		TC.	Identical(p.R.At(0), 37)
+
+		p.StepForward()
+		p.Execute()
+		TC.	Identical(p.R.At(0), 38)							//	program[1]
+
+		p.ResetState()
+		p.StepForward()											//	skip program[0]
+		p.Execute()
+		TC.	Identical(p.R.At(0), 1)								//	program[1]
+
+		p.ResetState()
+		p.Run()													//	program[7] is an illegal instruction
+		TC.	Refute(p.Running).
+			Confirm(p.Illegal_Operation).
+			Identical(p.pc, p.Program.Len() - 1).				//	terminated without executing program[7]
+			Identical(p.R.At(0), 37)
+
+		p.Program.code[7] = &OpCode{							//	patch program[7] with a valid instruction
+			code: p.Code("cld"),
+			data: Buffer{1, 100},
+		}
+		p.ResetState()
+		p.Run()
+		TC.	Refute(p.Running).
+			Refute(p.Illegal_Operation).
+			Identical(p.pc, p.Program.Len()).					//	terminated with all instructions executed
+			Identical(p.R.At(0), 37).
+			Identical(p.R.At(1), 100)
+
+		p.LoadProgram(advancedProgram(p))
+		p.Run()
+		TC.	Identical(p.R.At(0), 0).
+			Identical(p.R.At(1), 1000)
+	}).
+	Run("To Do", func(TC *Test) {
+		TC.	Untested("InstructionSet handling").
+			Untested("ProcessorCore cloning").
+			Untested("IOController handling")
+	})
 }

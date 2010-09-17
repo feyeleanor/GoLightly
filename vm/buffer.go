@@ -75,7 +75,14 @@ func (b *Buffer) Replicate(count int) *Buffer {
 func (b *Buffer) Len() int								{ return len(*b) }
 func (b *Buffer) Cap() int								{ return cap(*b) }
 func (b *Buffer) At(i int) int							{ return (*b)[i] }
-func (b *Buffer) Set(i int, x int)						{ (*b)[i] = x }
+
+func (b *Buffer) Set(i int, x... int) {
+	for _, v := range x {
+		(*b)[i] = v
+		i++
+	}
+}
+
 func (b *Buffer) First() int							{ return (*b)[0] }
 func (b *Buffer) Last() int								{ return (*b)[len(*b)-1] }
 func (b *Buffer) Clone() *Buffer						{ return b.Slice(0, b.Len()) }
@@ -113,7 +120,14 @@ func (b *Buffer) Copy(i, j int)							{ (*b)[i] = (*b)[j] }
 func (b *Buffer) Swap(i, j int)							{ (*b)[i], (*b)[j] = (*b)[j], (*b)[i] }
 
 func (b *Buffer) FAt(i int) float						{ return *(*float)(unsafe.Pointer(&(*b)[i])) }
-func (b *Buffer) FSet(i int, f float)					{ (*b)[i] = *(*int)(unsafe.Pointer(&f)) }
+
+func (b *Buffer) FSet(i int, f... float) {
+	for _, v := range f {
+		(*b)[i] = *(*int)(unsafe.Pointer(&v))
+		i++
+	}
+}
+
 func (b *Buffer) FFirst() float							{ return b.FAt(0) }
 func (b *Buffer) FLast() float							{ return b.FAt(len(*b) - 1) }
 func (b *Buffer) FIdentical(o *Buffer, tolerance float) bool {

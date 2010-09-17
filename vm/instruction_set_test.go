@@ -1,68 +1,71 @@
 package vm
+
 import "testing"
+import . "golightly/test"
 
-var REGISTER int
+func TestInstructionSet(t *testing.T) {
+	NewTest(t).
+	Run("Creation", func(TC *Test) {
+		var REGISTER int
 
-func opcode(i int) *OpCode {
-	return &OpCode{i, nil}
-}
+		i := new(InstructionSet)
+		i.Init()
+		i.Define("zero",	func (b *Buffer) { REGISTER = 0 })
+		i.Define("one",		func (b *Buffer) { REGISTER = 1 })
+		i.Define("two",		func (b *Buffer) { REGISTER = 2 })
+		i.Define("three",	func (b *Buffer) { REGISTER = 3 })
+		i.Define("four",	func (b *Buffer) { REGISTER = 4 })
+		TC.	Identical(i.Len(), 5).
+			Confirm(i.Exists("zero")).
+			Confirm(i.Exists("one")).
+			Confirm(i.Exists("two")).
+			Confirm(i.Exists("three")).
+			Confirm(i.Exists("four"))
 
-func defaultInstructionSet() *InstructionSet {
-	i := new(InstructionSet)
-	i.Init()
-	i.Define("zero",	func (o *Buffer) { REGISTER = 0 })
-	i.Define("one",		func (o *Buffer) { REGISTER = 1 })
-	i.Define("two",		func (o *Buffer) { REGISTER = 2 })
-	i.Define("three",	func (o *Buffer) { REGISTER = 3 })
-	i.Define("four",	func (o *Buffer) { REGISTER = 4 })
-	return i
-}
+		for j, f := range i.ops {
+			o := OpCode{code: j}
+			f.(func (b *Buffer))(&o.data)
+			TC.Identical(REGISTER, j)
+		}
+		for j := 0; j < i.Len(); j++ {
+			i.Invoke(&OpCode{code: j})
+			TC.Identical(REGISTER, j)
+		}
 
-func checkInstructionExists(name string, i *InstructionSet, t *testing.T) {
-	_, ok := i.tokens[name]
-	compareValues(i, t, ok, true)
-}
+		TC.	Identical(i.Code("zero"), 0).
+			Identical(i.Code("two"), 2).
+			Identical(i.Code("five"), -1)
 
-func checkDefaultInstructionSet(i *InstructionSet, t *testing.T) {
-	checkInstructionExists("zero", i, t)
-	checkInstructionExists("one", i, t)
-	checkInstructionExists("two", i, t)
-	checkInstructionExists("three", i, t)
-	checkInstructionExists("four", i, t)
-}
 
-func checkInstructionInvocation(i *InstructionSet, t *testing.T) {
-	for j, f := range i.ops {
-		f.(func (o *Buffer))(&opcode(j).data)
-		compareValues(i, t, REGISTER, j)
-	}
-	for j := 0; j < i.Len(); j++ {
-		i.Invoke(opcode(j))
-		compareValues(i, t, REGISTER, j)
-	}
-}
+		ZERO_NIL	:= i.OpCode("zero", nil)
+		ZERO_ZERO	:= i.OpCode("zero", &Buffer{0})
+		ZERO_ONE 	:= i.OpCode("zero", &Buffer{1})
+		ONE_NIL		:= i.OpCode("one", nil)
+		ONE_ZERO	:= i.OpCode("one", &Buffer{0})
+		ONE_ONE		:= i.OpCode("one", &Buffer{1})
 
-func checkInstructionSearch(i *InstructionSet, t *testing.T) {
-	compareValues(i, t, i.Code("zero"), 0)
-	compareValues(i, t, i.Code("two"), 2)
-	compareValues(i, t, i.Code("five"), -1)
-}
+		NewTestTable(func(y, x interface{}) interface{} {
+			return y.(*OpCode).Identical(x.(*OpCode))
+		}).
+		X(				ZERO_NIL,	ZERO_ZERO,	ZERO_ONE,	ONE_NIL,	ONE_ZERO,	ONE_ONE	).
+		Y(	ZERO_NIL,	true,		false,		false,		false,		false,		false	).
+		Y(	ZERO_ZERO,	false,		true,		false,		false,		false,		false	).
+		Y(	ZERO_ONE,	false,		false,		true,		false,		false,		false	).
+		Y(	ONE_NIL,	false,		false,		false,		true,		false,		false	).
+		Y(	ONE_ZERO,	false,		false,		false,		false,		true,		false	).
+		Y(	ONE_ONE,	false,		false,		false,		false,		false,		true	).
+		Assess(TC)
 
-func checkInstructionCompilation(i *InstructionSet, t *testing.T) {
-	zero, one := i.Code("zero"), i.Code("one")
-	p := Buffer{1}
-	q := Buffer{0}
-	compareValues(i, t, i.OpCode("zero", &q).Identical(&OpCode{zero, q}), true)
-	compareValues(i, t, i.OpCode("zero", &p).Identical(&OpCode{zero, nil}), false)
-	compareValues(i, t, i.OpCode("one", &q).Similar(&OpCode{one, p}), true)
-	compareValues(i, t, i.OpCode("zero", &p).Similar(&OpCode{one, p}), false)
-}
-
-func TestInstructionSetCreation(t *testing.T) {
-	i := defaultInstructionSet()
-	compareValues(i, t, i.Len(), 5)
-	checkDefaultInstructionSet(i, t)
-	checkInstructionInvocation(i, t)
-	checkInstructionSearch(i, t)
-	checkInstructionCompilation(i, t)
+		NewTestTable(func(y, x interface{}) interface{} {
+			return y.(*OpCode).Similar(x.(*OpCode))
+		}).
+		X(				ZERO_NIL,	ZERO_ZERO,	ZERO_ONE,	ONE_NIL,	ONE_ZERO,	ONE_ONE	).
+		Y(	ZERO_NIL,	true,		false,		false,		false,		false,		false	).
+		Y(	ZERO_ZERO,	false,		true,		true,		false,		false,		false	).
+		Y(	ZERO_ONE,	false,		true,		true,		false,		false,		false	).
+		Y(	ONE_NIL,	false,		false,		false,		true,		false,		false	).
+		Y(	ONE_ZERO,	false,		false,		false,		false,		true,		true	).
+		Y(	ONE_ONE,	false,		false,		false,		false,		true,		true	).
+		Assess(TC)
+	})
 }

@@ -1,168 +1,166 @@
-//	TODO: 	Add tests for GetBuffer, PutBuffer and Clear
-
 package vm
+
 import "testing"
-import "math"
+import . "golightly/test"
 
-var predicate_index int
+func TestBuffer(t *testing.T) {
+	NewTest(t).
+	Run("Creation", func(TC *Test) {
+		b1 := make(Buffer, 6)
+		TC.	Identical(b1, Buffer{0, 0, 0, 0, 0, 0})
+		b1 = Buffer{1, 2, 3, 4}
+		b2 := *(b1.Clone())
+		TC.	Identical(b1, b2).
+			Identical(b1[0], b1.At(0)).
+			Identical(b1[1], b1.At(1)).
+			Identical(b1[2], b1.At(2)).
+			Identical(b1[3], b1.At(3))
+	}).
+	Run("Buffer Manipulation", func(TC *Test) {
+		b := make(Buffer, 6)
+		TC.	Identical(b, Buffer{0, 0, 0, 0, 0, 0})
 
-func twoIntegerBuffer() *Buffer {
-	return &Buffer{100, 200}
-}
+		b.Set(0, 1, 2, 3, 4, 5, 6)
+		TC.	Identical(b, Buffer{1, 2, 3, 4, 5, 6})
 
-func sixIntegerBuffer() *Buffer {
-	c := "hello world"[1]
-	f := 3.7
-	return &Buffer{37, int(byte(c)), int(f), 5, 2, 2}
-}
+		b.FSet(0, 2.0, 4.0, 6.0, 8.0)
+		TC.	Identical(b.FAt(0), 2.0).
+			Identical(b.FAt(1), 4.0).
+			Identical(b.FAt(2), 6.0).
+			Identical(b.FAt(3), 8.0)
+	}).
+	Run("Replication", func(TC *Test) {
+		b1 := Buffer{20, 30}
+		b2 := *(b1.Replicate(3))
+		TC.	Identical(len(b2),	b2.Len(),	cap(b2),	b2.Cap(),	6).
+			Identical(b1[0],	b2[0],		b2[2],		b2[4]).
+			Identical(b1[1],	b2[1],		b2[3],		b2[5]).
+			Identical(b1.At(0),	b2.At(0),	b2.At(2),	b2.At(4)).
+			Identical(b1.At(1),	b2.At(1),	b2.At(3),	b2.At(5))
+	}).
+	Run("Slicing", func(TC *Test) {
+		b1 := Buffer{0, 1, 2, 3}
+		b2 := *(b1.Slice(1, 3))
+		TC. Identical(b2.Len(),	2).
+			Identical(b2.Cap(),	2).
+			Identical(b2[0],	1).
+			Identical(b2[1],	2)
+	}).
+	Run("Integer Maths", func(TC *Test) {
+		b := Buffer{0}
+		b.Increment(0)
+		TC.Identical(b[0], 1)
 
-func sixFloatBuffer() *Buffer {
-	b := new(Buffer)
-	b.Resize(6)
-	b.FSet(0, 37.0)
-	b.FSet(1, float("e"[0]))					//	ASCII == 101.0
-	b.FSet(2, 3.7)
-	b.FSet(3, 5.0)
-	b.FSet(4, 2.0)
-	b.FSet(5, 2.0)
-	return b
-}
+		b.Decrement(0)
+		TC.Identical(b[0], 0)
 
-func compareValues(object interface{}, t *testing.T, value, target_value interface{}) {
-	predicate_index += 1
-	if value != target_value { t.Errorf("%T: test %d -> expected %v, got %v", object, predicate_index, target_value, value) }
-}
+		b = Buffer{0, 1}
+		b.Add(0, 1)
+		TC.Identical(b[0], 1)
 
-func compareFloatValues(object interface{}, t *testing.T, value, target_value, tolerance float) {
-	compareValues(object, t, math.Fabs(float64(value - target_value)) < float64(tolerance), true)
-}
+		b.Subtract(0, 1)
+		TC.Identical(b[0], 0)
 
-func checkIntegerBuffer(b, o *Buffer, t *testing.T, value bool) {
-	compareValues(b, t, b.Identical(o), value)
-}
+		b = Buffer{5}
+		b.Negate(0)
+		TC.Identical(b[0], -5)
+		b.Negate(0)
+		TC.Identical(b[0], 5)
 
-func checkFloatBuffer(b, o *Buffer, tolerance float, t *testing.T, value bool) {
-	compareValues(b, t, b.FIdentical(o, tolerance), value)
-}
+		b = Buffer{2, 5}
+		b.Multiply(0, 1)
+		TC.Identical(b[0], 10)
+		b.Divide(0, 1)
+		TC.Identical(b[0], 2)
+	}).
+	Run("Bit Manipulation", func(TC *Test) {
+		b := Buffer{2, 5, 6}
+		b.And(0, 1)
+		TC.Identical(b[0], 0)
+		b.And(1, 2)
+		TC.Identical(b[1], 4)
 
-func TestBufferCreate(t *testing.T) {
-	checkIntegerBuffer(sixIntegerBuffer(), sixIntegerBuffer(), t, true)
-}
+		b = Buffer{2, 5, 6}
+		b.Or(0, 1)
+		TC.Identical(b[0], 7)
+		b.Or(1, 2)
+		TC.Identical(b[1], 7)
 
-func TestBufferClone(t *testing.T) {
-	checkIntegerBuffer(sixIntegerBuffer().Clone(), sixIntegerBuffer(), t, true)
-}
+		b = Buffer{2, 5, 6}
+		b.Xor(0, 1)
+		TC.Identical(b[0], 7)
+		b.Xor(0, 1)
+		TC.Identical(b[0], 2)
+		b.Xor(1, 2)
+		TC.Identical(b[1], 3)
+		b.Xor(1, 2)
+		TC.Identical(b[1], 5)
 
-func TestBufferReplication(t *testing.T) {
-	b1 := twoIntegerBuffer()
-	b2 := b1.Replicate(3)
-	compareValues(b2, t, b2.Len(), 6)
-	compareValues(b2, t, b2.Cap(), 6)
-	compareValues(b2, t, b2.At(0) == b1.At(0), true)
-	compareValues(b2, t, b2.At(1) == b1.At(1), true)
-	compareValues(b2, t, b2.At(2) == b1.At(0), true)
-	compareValues(b2, t, b2.At(3) == b1.At(1), true)
-	compareValues(b2, t, b2.At(4) == b1.At(0), true)
-	compareValues(b2, t, b2.At(5) == b1.At(1), true)
-}
+		b = Buffer{128, 4, 6}
+		b.ShiftRight(0, 1)
+		TC.Identical(b[0], 8)
+		b.ShiftLeft(0, 1)
+		TC.Identical(b[0], 128)
+		b.Invert(0)
+		TC.	Identical(b[0], ^128).
+			Identical(b[0], -129)
+	}).
+	Run("Integer Logic", func(TC *Test) {
+		b1 := Buffer{-5, 0, 17}
+		TC.	Confirm(b1.LessThan(0, 1)).
+			Refute(b1.Equals(0, 1)).
+			Refute(b1.GreaterThan(0, 1)).
+			Confirm(b1.LessThanZero(0)).
+			Refute(b1.EqualsZero(0)).
+			Confirm(b1.EqualsZero(1)).
+			Confirm(b1.GreaterThanZero(2))
 
-func TestBufferSlice(t *testing.T) {
-	b := sixIntegerBuffer().Slice(1, 3)
-	compareValues(b, t, b.Len(), 2)
-	compareValues(b, t, b.Cap(), 2)
-	compareValues(b, t, b.At(0), int(byte("e"[0])))
-	compareValues(b, t, b.At(1), 3)
-}
+		b2 := *(b1.Clone())
+		b2.Copy(1, 2)
+		TC.	Different(b1, b2).
+			Identical(b2[1], 17).
+			Confirm(b2.LessThan(0, 1)).
+			Confirm(b2.Equals(1, 2)).
+			Refute(b2.GreaterThan(0, 2)).
+			Refute(b2.LessThanZero(1)).
+			Refute(b2.EqualsZero(1)).
+			Confirm(b2.GreaterThanZero(1))
 
-func TestBufferMaths(t *testing.T) {
-	b := sixIntegerBuffer()
-	b.Increment(0)											//	b[0] == 38
-	compareValues(b, t, b.At(0), 38)
-	b.Decrement(0)											//	b[0] == 37
-	compareValues(b, t, b.At(0), 37)
-	b.Add(1, 3)												//	b[1] == 'j'
-	compareValues(b, t, b.At(1), int(byte("j"[0])))
-	b.Subtract(2, 3)										//	b[2] == -2
-	compareValues(b, t, b.At(2), -2)
-	b.Negate(4)												//	b[4] == -2
-	compareValues(b, t, b.At(4), -2)
-	b.Multiply(2, 4)										//	b[2] == 4
-	compareValues(b, t, b.At(2), 4)
-	b.Divide(2, 5)											//	b[2] == 2
-	compareValues(b, t, b.At(2), 2)
-	b.Multiply(5, 3)										//	b[5] == 10
-	b.And(2, 5)												//	b[2] == 2
-	compareValues(b, t, b.At(2), 2)
-	b.Or(2, 5)												//	b[2] == 10
-	compareValues(b, t, b.At(2), 10)
-	b.Negate(4)												//	b[4] == 2
-	compareValues(b, t, b.At(4), 2)
-	b.Xor(2, 4)												//	b[2] == 8
-	compareValues(b, t, b.At(2), 8)
-}
+		b2.Set(0, -5, 0, 17)
+		TC.	Identical(b2, b1)
+	}).
+	Run("Floating-Point Maths", func(TC *Test) {
+		b := make(Buffer, 2)
+		b.FSet(0, 37.0, 101.0)
+		TC.Identical(b.FAt(0), 37.0)
+		TC.Identical(b.FAt(1), 101.0)
 
-func TestBufferFloatingPointMaths(t *testing.T) {
-	b := sixFloatBuffer()
-	compareValues(b, t, b.FAt(0), 37.0)
-	compareValues(b, t, b.FAt(1), 101.0)
-	b.FAdd(0, 1)
-	compareFloatValues(b, t, b.FAt(0), 138.0, 0.001)
-	b.FSubtract(0, 1)
-	compareFloatValues(b, t, b.FAt(0), 37.0, 0.001)
-	b.FMultiply(0, 1)
-	compareFloatValues(b, t, b.FAt(0), 3737.0, 0.001)
-	b.FDivide(0, 1)
-	compareFloatValues(b, t, b.FAt(0), 37.0, 0.001)
-	b.FNegate(0)
-	compareFloatValues(b, t, b.FAt(0), -37.0, 0.001)
-}
+		b.FAdd(0, 1)
+		TC.	Identical(b.FAt(0), 138.0)
+		b.FSubtract(0, 1)
+		TC.Identical(b.FAt(0), 37.0)
 
-func TestBufferBitOperators(t *testing.T) {
-	b := sixIntegerBuffer()									//	b[0] == 37, b[5] == 2
-	b.ShiftRight(0, 5)
-	compareValues(b, t, b.At(0), 9)
-	b.ShiftLeft(0, 5)
-	compareValues(b, t, b.At(0), 36)
-	b.Invert(0)
-	compareValues(b, t, b.At(0), ^36)
-	compareValues(b, t, b.At(0), -37)
-}
+		b.FMultiply(0, 1)
+		TC.Identical(b.FAt(0), 3737.0)
+		b.FDivide(0, 1)
+		TC.Identical(b.FAt(0), 37.0)
 
-func TestBufferIntegerLogic(t *testing.T) {
-	b := sixIntegerBuffer()
-	checkIntegerBuffer(b, sixIntegerBuffer(), t, true)
-	compareValues(b, t, b.LessThan(2, 3), true)				//	b[2] == 3, b[3] == 5
-	compareValues(b, t, b.Equals(2, 3), false)
-	compareValues(b, t, b.GreaterThan(2, 3), false)
-	compareValues(b, t, b.LessThanZero(2), false)
-	compareValues(b, t, b.EqualsZero(2), false)
-	compareValues(b, t, b.GreaterThanZero(2), true)
-	b.Copy(1, 2)											//	b[1] == 3
-	checkIntegerBuffer(b, sixIntegerBuffer(), t, false)
-	compareValues(b, t, b.At(1), 3)
-	compareValues(b, t, b.LessThan(1, 3), true)				//	b[1] == 3, b[3] == 5
-	compareValues(b, t, b.Equals(1, 2), true)				//	b[1] == 3, b[2] == 3
-	compareValues(b, t, b.GreaterThan(1, 3), false)
-	compareValues(b, t, b.LessThanZero(1), false)
-	compareValues(b, t, b.EqualsZero(1), false)
-	compareValues(b, t, b.GreaterThanZero(1), true)
-	b.Set(1, 0)												//	b[1] == 0, b[3] == 5
-	checkIntegerBuffer(b, sixIntegerBuffer(), t, false)
-	compareValues(b, t, b.LessThan(1, 3), true)
-	compareValues(b, t, b.Equals(1, 3), false)
-	compareValues(b, t, b.GreaterThan(1, 3), false)
-	compareValues(b, t, b.LessThanZero(1), false)
-	compareValues(b, t, b.EqualsZero(1), true)
-	compareValues(b, t, b.GreaterThanZero(1), false)
-}
-
-func TestBufferFloatingPointLogic(t *testing.T) {
-	b := sixFloatBuffer()
-	checkFloatBuffer(b, sixFloatBuffer(), 0.001, t, true)
-	compareValues(b, t, b.FLessThan(0, 1), true)
-	compareValues(b, t, b.FEquals(0, 1, 0.001), false)
-	compareValues(b, t, b.FGreaterThan(0, 1), false)
-	compareValues(b, t, b.FLessThanZero(0), false)
-	compareValues(b, t, b.FEqualsZero(0, 0.001), false)
-	compareValues(b, t, b.FGreaterThanZero(0), true)
+		b.FNegate(0)
+		TC.Identical(b.FAt(0), -37.0)
+	}).
+	Run("Floating-point Logic", func(TC *Test) {
+		b := make(Buffer, 2)
+		b.FSet(0, 37.0, 101.0)
+		TC.	Confirm(b.FLessThan(0, 1)).
+			Refute(b.FEquals(0, 1, 0.001)).
+			Refute(b.FGreaterThan(0, 1)).
+			Refute(b.FLessThanZero(0)).
+			Refute(b.FEqualsZero(0, 0.001)).
+			Confirm(b.FGreaterThanZero(0))
+	}).
+	Run("To Do", func(TC *Test) {
+		TC.	Untested("GetBuffer").
+			Untested("PutBuffer").
+			Untested("Clear")
+	})
 }

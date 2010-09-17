@@ -1,41 +1,32 @@
 package vm
+
 import "testing"
+import . "golightly/test"
 
-func defaultSynchronousChannel() chan *Vector {
-	return make(chan *Vector)
-}
+func TestIOController(t *testing.T) {
+	NewTest(t).
+	Run("Creation", func(TC *Test) {
+		i := new(IOController)
+		i.Init()
+		TC.	Identical(i.Len(), i.Cap(), 0)
 
-func defaultAsynchronousChannel() chan *Vector {
-	return make(chan *Vector, 256)
-}
+		i.Open(make(chan *Vector))
+		TC.	Identical(i.Len(), i.Cap(), 1)
 
-func defaultIOController() *IOController {
-	i := new(IOController)
-	i.Init()
-	i.Open(defaultSynchronousChannel())
-	i.Open(defaultAsynchronousChannel())
-	return i
-}
+		i.Open(make(chan *Vector, 256))
+		TC.	Identical(i.Len(), i.Cap(), 2)
 
-func checkChannelsAssigned(i *IOController, t *testing.T, channels int) {
-	compareValues(i, t, i.Len(), channels)
-	compareValues(i, t, i.Cap(), channels)
-}
+		ioc := i.Clone()
+		TC.	Identical(ioc.Len(), ioc.Cap(), 2)
+	}).
+	Run("Traffic", func(TC *Test) {
+		i := new(IOController)
+		i.Init()
+		i.Open(make(chan *Vector))
+		i.Open(make(chan *Vector, 256))
 
-func TestCreateIOController(t *testing.T) {
-	i := new(IOController)
-	i.Init()
-	checkChannelsAssigned(i, t, 0)
-	i.Open(defaultSynchronousChannel())
-	checkChannelsAssigned(i, t, 1)
-	i.Open(defaultAsynchronousChannel())
-	checkChannelsAssigned(i, t, 2)
-	ioc := i.Clone()
-	checkChannelsAssigned(ioc, t, 2)
-}
-
-func TestIOControllerTraffic(t *testing.T) {
-	i := defaultIOController()
-	i.Send(0, sixIntegerVector())
-	checkVector(i.Receive(0), sixIntegerVector(), t, true)
+		b := &Vector{Buffer{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}}
+		i.Send(0, b)
+		TC.Identical(b, i.Receive(0))
+	})
 }

@@ -35,6 +35,10 @@ func (i *InstructionSet) Init() {
 func (i *InstructionSet) Len() int {
 	return i.ops.Len()
 }
+func (i *InstructionSet) Exists(name string) bool {
+	_, ok := i.tokens[name]
+	return ok
+}
 func (i *InstructionSet) Define(name string, closure func (o *Buffer)) bool {
 	// Ensure instruction token hasn't yet been defined
 	if _, ok := i.tokens[name]; !ok {
@@ -50,11 +54,15 @@ func (i *InstructionSet) Code(name string) int {
 	}
 	return -1
 }
-func (i *InstructionSet) OpCode(name string, data *Buffer) *OpCode {
+func (i *InstructionSet) OpCode(name string, data *Buffer) (r *OpCode) {
 	if op := i.Code(name); op != -1 {
-		return &OpCode{op, *data}
+		if data != nil {
+			r = &OpCode{op, *data}
+		} else {
+			r = &OpCode{op, Buffer{}}
+		}
 	}
-	return nil
+	return
 }
 func (i *InstructionSet) Invoke(o *OpCode) bool {
 	if o.code < 0 || o.code >= i.Len() {
