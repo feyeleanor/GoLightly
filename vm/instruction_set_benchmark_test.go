@@ -1,6 +1,8 @@
 package vm
+
 import "testing"
 import "fmt"
+import . "golightly/storage"
 //import "container/vector"
 
 func BenchmarkCreateOpCode(b *testing.B) {
@@ -36,7 +38,7 @@ func BenchmarkDefineInstruction(b *testing.B) {
 		in := new(InstructionSet)
 		in.Init()
 	b.StartTimer()
-	for i := 0; i < b.N; i++ { in.Define(fmt.Sprintf("%v", i), func(o *Buffer) {}) }
+	for i := 0; i < b.N; i++ { in.Define(fmt.Sprintf("%v", i), func(o *IntBuffer) {}) }
 }
 
 func BenchmarkInstructionToCode(b *testing.B) {
@@ -44,7 +46,7 @@ func BenchmarkInstructionToCode(b *testing.B) {
 		in := new(InstructionSet)
 		in.Init()
 		for i := 0; i < 1000; i++ {
-			in.Define(fmt.Sprintf("%v", i), func(o *Buffer) {})
+			in.Define(fmt.Sprintf("%v", i), func(o *IntBuffer) {})
 		}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ { in.Code("3") }
@@ -55,10 +57,10 @@ func BenchmarkInstructionToOpCode(b *testing.B) {
 		in := new(InstructionSet)
 		in.Init()
 		for i := 0; i < 1000; i++ {
-			in.Define(fmt.Sprintf("%v", i), func(o *Buffer) {})
+			in.Define(fmt.Sprintf("%v", i), func(o *IntBuffer) {})
 		}
 	b.StartTimer()
-	for i := 0; i < b.N; i++ { in.OpCode("3", &Buffer{1, 2, 3}) }
+	for i := 0; i < b.N; i++ { in.OpCode("3", &IntBuffer{1, 2, 3}) }
 }
 
 func BenchmarkInstructionInvocation(b *testing.B) {
@@ -66,7 +68,7 @@ func BenchmarkInstructionInvocation(b *testing.B) {
 		in := new(InstructionSet)
 		in.Init()
 		for i := 0; i < 1000; i++ {
-			in.Define(fmt.Sprintf("%v", i), func(o *Buffer) {})
+			in.Define(fmt.Sprintf("%v", i), func(o *IntBuffer) {})
 		}
 		op := OpCode{3, nil}
 	b.StartTimer()

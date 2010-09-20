@@ -2,6 +2,14 @@ package baseline
 
 import "testing"
 
+func BenchmarkBaselineCastInt32ToInt(b *testing.B) {
+	for i := 0; i < b.N; i++ { x = int(x32) }
+}
+
+func BenchmarkBaselineCastIntToInt32(b *testing.B) {
+	for i := 0; i < b.N; i++ { x32 = int32(x) }
+}
+
 func BenchmarkBaselineVariableGet(b *testing.B) {
 	for i := 0; i < b.N; i++ { x = x }
 }

@@ -1,6 +1,7 @@
 package vm
 
 import "testing"
+import . "golightly/storage"
 import . "golightly/test"
 
 func TestInstructionSet(t *testing.T) {
@@ -10,11 +11,11 @@ func TestInstructionSet(t *testing.T) {
 
 		i := new(InstructionSet)
 		i.Init()
-		i.Define("zero",	func (b *Buffer) { REGISTER = 0 })
-		i.Define("one",		func (b *Buffer) { REGISTER = 1 })
-		i.Define("two",		func (b *Buffer) { REGISTER = 2 })
-		i.Define("three",	func (b *Buffer) { REGISTER = 3 })
-		i.Define("four",	func (b *Buffer) { REGISTER = 4 })
+		i.Define("zero",	func (b *IntBuffer) { REGISTER = 0 })
+		i.Define("one",		func (b *IntBuffer) { REGISTER = 1 })
+		i.Define("two",		func (b *IntBuffer) { REGISTER = 2 })
+		i.Define("three",	func (b *IntBuffer) { REGISTER = 3 })
+		i.Define("four",	func (b *IntBuffer) { REGISTER = 4 })
 		TC.	Identical(i.Len(), 5).
 			Confirm(i.Exists("zero")).
 			Confirm(i.Exists("one")).
@@ -24,7 +25,7 @@ func TestInstructionSet(t *testing.T) {
 
 		for j, f := range i.ops {
 			o := OpCode{code: j}
-			f.(func (b *Buffer))(&o.data)
+			f.(func (b *IntBuffer))(&o.data)
 			TC.Identical(REGISTER, j)
 		}
 		for j := 0; j < i.Len(); j++ {
@@ -38,11 +39,11 @@ func TestInstructionSet(t *testing.T) {
 
 
 		ZERO_NIL	:= i.OpCode("zero", nil)
-		ZERO_ZERO	:= i.OpCode("zero", &Buffer{0})
-		ZERO_ONE 	:= i.OpCode("zero", &Buffer{1})
+		ZERO_ZERO	:= i.OpCode("zero", &IntBuffer{0})
+		ZERO_ONE 	:= i.OpCode("zero", &IntBuffer{1})
 		ONE_NIL		:= i.OpCode("one", nil)
-		ONE_ZERO	:= i.OpCode("one", &Buffer{0})
-		ONE_ONE		:= i.OpCode("one", &Buffer{1})
+		ONE_ZERO	:= i.OpCode("one", &IntBuffer{0})
+		ONE_ONE		:= i.OpCode("one", &IntBuffer{1})
 
 		NewTestTable(func(y, x interface{}) interface{} {
 			return y.(*OpCode).Identical(x.(*OpCode))

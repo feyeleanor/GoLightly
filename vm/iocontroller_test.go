@@ -1,6 +1,7 @@
 package vm
 
 import "testing"
+import . "golightly/storage"
 import . "golightly/test"
 
 func TestIOController(t *testing.T) {
@@ -25,7 +26,7 @@ func TestIOController(t *testing.T) {
 		i.Open(make(chan *Vector))
 		i.Open(make(chan *Vector, 256))
 
-		b := &Vector{Buffer{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}}
+		b := &Vector{IntBuffer{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}}
 		i.Send(0, b)
 		TC.Identical(b, i.Receive(0))
 	})

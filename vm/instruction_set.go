@@ -6,20 +6,22 @@ package vm
 
 import "container/vector"
 import "fmt"
+import . "golightly/storage"
+import "reflect"
 
 type OpCode struct {
 	code	int
-	data	Buffer
+	data	IntBuffer
 }
 func (o *OpCode) Similar(p *OpCode) bool {
 	return o.code == p.code && o.data.Len() == p.data.Len()
 }
 func (o *OpCode) Identical(p *OpCode) bool {
-	return o.Similar(p) && o.data.Identical(&p.data)
+	return reflect.DeepEqual(o.data, &p.data)
 }
 func (o *OpCode) Replace(p *OpCode) {
 	o.code = p.code
-	o.data = *p.data.Clone()
+	o.data = p.data.Clone()
 }
 func (o *OpCode) String() string {
 	return fmt.Sprintf("%v: %v", o.code, o.data)
@@ -39,7 +41,7 @@ func (i *InstructionSet) Exists(name string) bool {
 	_, ok := i.tokens[name]
 	return ok
 }
-func (i *InstructionSet) Define(name string, closure func (o *Buffer)) bool {
+func (i *InstructionSet) Define(name string, closure func (o *IntBuffer)) bool {
 	// Ensure instruction token hasn't yet been defined
 	if _, ok := i.tokens[name]; !ok {
 		i.ops.Push(closure)
@@ -54,12 +56,12 @@ func (i *InstructionSet) Code(name string) int {
 	}
 	return -1
 }
-func (i *InstructionSet) OpCode(name string, data *Buffer) (r *OpCode) {
+func (i *InstructionSet) OpCode(name string, data *IntBuffer) (r *OpCode) {
 	if op := i.Code(name); op != -1 {
 		if data != nil {
 			r = &OpCode{op, *data}
 		} else {
-			r = &OpCode{op, Buffer{}}
+			r = &OpCode{op, IntBuffer{}}
 		}
 	}
 	return
@@ -68,6 +70,6 @@ func (i *InstructionSet) Invoke(o *OpCode) bool {
 	if o.code < 0 || o.code >= i.Len() {
 		return false
 	}
-	i.ops.At(o.code).(func (o *Buffer))(&o.data)
+	i.ops.At(o.code).(func (o *IntBuffer))(&o.data)
 	return true
 }

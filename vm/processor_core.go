@@ -5,6 +5,7 @@
 package vm
 
 import "container/vector"
+import . "golightly/storage"
 import "syscall"
 
 type ExecutionFlags struct {
@@ -57,70 +58,70 @@ func (p *ProcessorCore) Clone(c chan *Vector) (q *ProcessorCore, i int) {
 	return
 }
 func (p *ProcessorCore) DefineInstructions() {
-	p.Define("noop",	func (o *Buffer) {})						//	NOOP
-	p.Define("nsleep",	func (o *Buffer) {							//	NSLEEP	n
+	p.Define("noop",	func (o *IntBuffer) {})						//	NOOP
+	p.Define("nsleep",	func (o *IntBuffer) {							//	NSLEEP	n
 		syscall.Sleep(int64((*o)[0]))
 	})
-	p.Define("sleep",	func (o *Buffer) {							//	SLEEP	n
+	p.Define("sleep",	func (o *IntBuffer) {							//	SLEEP	n
 		syscall.Sleep(int64((*o)[0]) << 32)
 	})
-	p.Define("halt",	func (o *Buffer) { p.Running = false })		//	HALT
-	p.Define("jmp",		func (o *Buffer) {							//	JMP		n
+	p.Define("halt",	func (o *IntBuffer) { p.Running = false })		//	HALT
+	p.Define("jmp",		func (o *IntBuffer) {							//	JMP		n
 		p.JumpRelative((*o)[0])
 	})
-	p.Define("jmpz",	func (o *Buffer) {							//	JMPZ	r, n
-		if p.R.Buffer.EqualsZero((*o)[0]) { p.JumpRelative((*o)[1]) }
+	p.Define("jmpz",	func (o *IntBuffer) {							//	JMPZ	r, n
+		if p.R.IntBuffer.ZeroEqual((*o)[0]) { p.JumpRelative((*o)[1]) }
 	})
-	p.Define("jmpnz",	func (o *Buffer) {							//	JMPNZ	r, n
-		if !p.R.Buffer.EqualsZero((*o)[0]) { p.JumpRelative((*o)[1]) }
+	p.Define("jmpnz",	func (o *IntBuffer) {							//	JMPNZ	r, n
+		if !p.R.IntBuffer.ZeroEqual((*o)[0]) { p.JumpRelative((*o)[1]) }
 	})
-	p.Define("call",	func (o *Buffer) { p.Call((*o)[0]) })		//	CALL	n
-	p.Define("ret",		func (o *Buffer) { p.Return() })			//	RET
-	p.Define("push",	func (o *Buffer) {							//	PUSH	r
-		p.DS.Push(p.R.At((*o)[0]))
+	p.Define("call",	func (o *IntBuffer) { p.Call((*o)[0]) })		//	CALL	n
+	p.Define("ret",		func (o *IntBuffer) { p.Return() })			//	RET
+	p.Define("push",	func (o *IntBuffer) {							//	PUSH	r
+		p.DS.Push(p.R.IntBuffer[(*o)[0]])
 	})
-	p.Define("pop",		func (o *Buffer) {							//	POP		r
-		p.R.Set((*o)[0], p.DS.Pop())
+	p.Define("pop",		func (o *IntBuffer) {							//	POP		r
+		p.R.IntBuffer[(*o)[0]] = p.DS.Pop()
 	})
-	p.Define("cld",		func (o *Buffer) {							//	CLD		r, v
-		p.R.Set((*o)[0], (*o)[1])
+	p.Define("cld",		func (o *IntBuffer) {							//	CLD		r, v
+		p.R.IntBuffer[(*o)[0]] = (*o)[1]
 	})
-	p.Define("send",	func (o *Buffer) {							//	SEND	c
+	p.Define("send",	func (o *IntBuffer) {							//	SEND	c
 		p.IOController.Send((*o)[0], p.M)
 	})
-	p.Define("recv",	func (o *Buffer) {							//	RECV	c
+	p.Define("recv",	func (o *IntBuffer) {							//	RECV	c
 		p.M = p.IOController.Receive((*o)[0])
 	})
-	p.Define("inc",		func (o *Buffer) {							//	INC		r
-		p.R.Buffer.Increment((*o)[0])
+	p.Define("inc",		func (o *IntBuffer) {							//	INC		r
+		p.R.IntBuffer.Increment((*o)[0])
 	})
-	p.Define("dec",		func (o *Buffer) {							//	DEC		r
-		p.R.Buffer.Decrement((*o)[0])
+	p.Define("dec",		func (o *IntBuffer) {							//	DEC		r
+		p.R.IntBuffer.Decrement((*o)[0])
 	})
-	p.Define("add",		func (o *Buffer) {							//	ADD		r1, r2
-		p.R.Buffer.Add((*o)[0], (*o)[1])
+	p.Define("add",		func (o *IntBuffer) {							//	ADD		r1, r2
+		p.R.IntBuffer.Add((*o)[0], (*o)[1])
 	})
-	p.Define("sub",		func (o *Buffer) {							//	SUB		r1, r2
-		p.R.Buffer.Subtract((*o)[0], (*o)[1])
+	p.Define("sub",		func (o *IntBuffer) {							//	SUB		r1, r2
+		p.R.IntBuffer.Subtract((*o)[0], (*o)[1])
 	})
-	p.Define("mul",		func (o *Buffer) {							//	MUL		r1, r2
-		p.R.Buffer.Multiply((*o)[0], (*o)[1])
+	p.Define("mul",		func (o *IntBuffer) {							//	MUL		r1, r2
+		p.R.IntBuffer.Multiply((*o)[0], (*o)[1])
 	})
-	p.Define("div",		func (o *Buffer) {							//	DIV		r1, r2
-		if p.R.At((*o)[1]) == 0 {
+	p.Define("div",		func (o *IntBuffer) {							//	DIV		r1, r2
+		if p.R.IntBuffer.ZeroEqual((*o)[1]) {
 			p.DivideByZero()
 		} else {
-			p.R.Buffer.Divide((*o)[0], (*o)[1])
+			p.R.IntBuffer.Divide((*o)[0], (*o)[1])
 		}
 	})
-	p.Define("and",		func (o *Buffer) {							//	AND		r1, r2
-		p.R.Buffer.And((*o)[0], (*o)[1])
+	p.Define("and",		func (o *IntBuffer) {							//	AND		r1, r2
+		p.R.IntBuffer.And((*o)[0], (*o)[1])
 	})
-	p.Define("or",		func (o *Buffer) {							//	OR		r1, r2
-		p.R.Buffer.Or((*o)[0], (*o)[1])
+	p.Define("or",		func (o *IntBuffer) {							//	OR		r1, r2
+		p.R.IntBuffer.Or((*o)[0], (*o)[1])
 	})
-	p.Define("xor",		func (o *Buffer) {							//	XOR		r1, r2
-		p.R.Buffer.Xor((*o)[0], (*o)[1])
+	p.Define("xor",		func (o *IntBuffer) {							//	XOR		r1, r2
+		p.R.IntBuffer.Xor((*o)[0], (*o)[1])
 	})
 }
 func (p *ProcessorCore) JumpTo(ops int) {
@@ -209,8 +210,8 @@ func (p *ProcessorCore) InlinedInstructions(o *OpCode) {
 		case 2:			syscall.Sleep(int64(o.data[0]) << 32)
 		case 3:			p.Running = false
 		case 4:			p.pc += o.data[0] - 1
-		case 5:			if p.R.Buffer.EqualsZero(o.data[0]) { p.pc += o.data[1] - 1 }
-		case 6:			if !p.R.Buffer.EqualsZero(o.data[0]) { p.pc += o.data[1] - 1 }
+		case 5:			if p.R.IntBuffer.ZeroEqual(o.data[0]) { p.pc += o.data[1] - 1 }
+		case 6:			if !p.R.IntBuffer.ZeroEqual(o.data[0]) { p.pc += o.data[1] - 1 }
 		case 7:			p.CS.Push(p.pc)
 						p.pc = o.data[0] - 1
 		case 8:			if p.CS.Len() > 0 {
@@ -219,26 +220,26 @@ func (p *ProcessorCore) InlinedInstructions(o *OpCode) {
 							p.Running = false
 							p.Stack_Underflow = true
 						}
-		case 9:			p.DS.Push(p.R.At(o.data[0]))
-		case 10:		p.R.Set(o.data[0], p.DS.Pop())
-		case 11:		p.R.Set(o.data[0], o.data[1])
+		case 9:			p.DS.Push(p.R.IntBuffer[o.data[0]])
+		case 10:		p.R.IntBuffer[o.data[0]] = p.DS.Pop()
+		case 11:		p.R.IntBuffer[o.data[0]] = o.data[1]
 		case 12:		p.IOController.Send(o.data[0], p.M)
 		case 13:		p.M = p.IOController.Receive(o.data[0])
-		case 14:		p.R.Buffer.Increment(o.data[0])
-		case 15:		p.R.Buffer.Decrement(o.data[0])
-		case 16:		p.R.Buffer.Add(o.data[0], o.data[1])
-		case 17:		p.R.Buffer.Subtract(o.data[0], o.data[1])
-		case 18:		p.R.Buffer.Multiply(o.data[0], o.data[1])
+		case 14:		p.R.IntBuffer.Increment(o.data[0])
+		case 15:		p.R.IntBuffer.Decrement(o.data[0])
+		case 16:		p.R.IntBuffer.Add(o.data[0], o.data[1])
+		case 17:		p.R.IntBuffer.Subtract(o.data[0], o.data[1])
+		case 18:		p.R.IntBuffer.Multiply(o.data[0], o.data[1])
 		case 19:		d := o.data[1]
 						if d == 0 {
 							p.Divide_by_Zero = true
 							p.Running = false
 						} else {
-							p.R.Buffer.Divide(o.data[0], d)
+							p.R.IntBuffer.Divide(o.data[0], d)
 						}
-		case 20:		p.R.Buffer.And(o.data[0], o.data[1])
-		case 21:		p.R.Buffer.Or(o.data[0], o.data[1])
-		case 22:		p.R.Buffer.Xor(o.data[0], o.data[1])
+		case 20:		p.R.IntBuffer.And(o.data[0], o.data[1])
+		case 21:		p.R.IntBuffer.Or(o.data[0], o.data[1])
+		case 22:		p.R.IntBuffer.Xor(o.data[0], o.data[1])
 		default:		if !p.Invoke(o) {
 							p.Running = false
 							p.Illegal_Operation = true
