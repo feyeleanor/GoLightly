@@ -52,12 +52,95 @@ func (b *IntBuffer) Shrink(count int) {
 	b.Resize(len(*b) - count)
 }
 
-func (b IntBuffer) Collect(f func(i int, x int) int) IntBuffer {
+func (b IntBuffer) Collect(f func(x int) int) IntBuffer {
 	n := make(IntBuffer, len(b))
 	for i, x := range b {
-		n[i] = f(i, x)
+		n[i] = f(x)
 	}
 	return n
+}
+
+func (b IntBuffer) Inject(seed int, f func(memo, x int) int) int {
+	for _, x := range b {
+		seed = f(seed, x)
+	}
+	return seed
+}
+
+func (b IntBuffer) Cycle(count int, f func(i, x int)) (j int) {
+	switch count {
+	case 0:		for {
+					for _, x := range b {
+						f(j, x)
+					}
+					j++
+				}
+	default:	for k := 0; j < count; j++ {
+					for _, x := range b {
+						f(k, x)
+					}
+					k++
+				}
+	}
+	return
+}
+
+func (b IntBuffer) Combine(o IntBuffer, f func(x, y int) int) IntBuffer {
+	if len(b) != len(o) {
+		panic(b)
+	}
+	n := make(IntBuffer, len(b))
+	for i, x := range b {
+		n[i] = f(x, o[i])
+	}
+	return n
+}
+
+func (b IntBuffer) Count(f func(x int) bool) (c int) {
+	for _, v := range b {
+		if f(v) {
+			c++
+		}
+	}
+	return
+}
+
+func (b IntBuffer) Any(f func(x int) bool) bool {
+	for _, v := range b {
+		if f(v) {
+			return true
+		}
+	}
+	return false
+}
+
+func (b IntBuffer) All(f func(x int) bool) bool {
+	for _, v := range b {
+		if !f(v) {
+			return false
+		}
+	}
+	return true
+}
+
+func (b IntBuffer) None(f func(x int) bool) bool {
+	for _, v := range b {
+		if f(v) {
+			return false
+		}
+	}
+	return true
+}
+
+func (b IntBuffer) One(f func(x int) bool) bool {
+	c := 0
+	for _, v := range b {
+		switch {
+		case c > 1:		return false
+		case f(v):		c++
+		}
+	}
+	return c == 1
 }
 
 func (b IntBuffer) Negate(i int)						{ b[i] = -b[i] }
@@ -85,33 +168,11 @@ func (b IntBuffer) ZeroEqual(i int) bool				{ return b[i] == 0 }
 func (b IntBuffer) ZeroGreater(i int) bool				{ return b[i] > 0 }
 
 
-var _INT = reflect.Typeof(int(0))
-var _INT_SIZE = unsafe.Sizeof(int(0))
-var _INT_BUFFER = reflect.Typeof(IntBuffer{})
-
-func AsIntBuffer(b interface{}) IntBuffer {
-	if v, ok := reflect.NewValue(b).(*reflect.SliceValue); ok {
-		typesize := int(v.Type().(*reflect.SliceType).Elem().Size())
-		h := unsafe.Unreflect(_SLICE_HEADER, unsafe.Pointer(v.Addr())).(reflect.SliceHeader)
-		h.Len = typesize * v.Len() / _INT_SIZE
-		h.Cap = typesize * v.Cap() / _INT_SIZE
- 		return unsafe.Unreflect(_INT_BUFFER, unsafe.Pointer(&h)).(IntBuffer)
-	}
-	panic(b)
-}
-
-func (b IntBuffer) ByteSlice() []byte {
-	h := unsafe.Unreflect(_SLICE_HEADER, unsafe.Pointer(&b)).(reflect.SliceHeader)
-	h.Len = _INT_SIZE * len(b)
-	h.Cap = _INT_SIZE * cap(b)
- 	return unsafe.Unreflect(_BYTE_SLICE, unsafe.Pointer(&h)).([]byte)
-}
-
-func (b IntBuffer) FloatBuffer() FloatBuffer {
-	h := unsafe.Unreflect(_SLICE_HEADER, unsafe.Pointer(&b)).(reflect.SliceHeader)
-	h.Len = _INT_SIZE * len(b) / _FLOAT_SIZE
-	h.Cap = _INT_SIZE * cap(b) / _FLOAT_SIZE
- 	return unsafe.Unreflect(_FLOAT_BUFFER, unsafe.Pointer(&h)).(FloatBuffer)
+func (b IntBuffer) SliceHeader(element_size int) *reflect.SliceHeader {
+	h := *(*reflect.SliceHeader)(unsafe.Pointer(&b))
+	h.Len = int(float(len(b)) * float(_INT_SIZE / element_size))
+	h.Cap = int(float(cap(b)) * float(_INT_SIZE / element_size))
+	return &h
 }
 
 func (b IntBuffer) Feed(c chan<- int, f func(i, x int) int) {

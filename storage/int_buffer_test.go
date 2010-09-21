@@ -65,6 +65,34 @@ func TestIntBuffer(t *testing.T) {
 			Identical(cap(b1), cap(b) + 4).
 			Identical(len(b1), len(b))
 	}).
+	Run("Enumerators", func(TC *Test) {
+		b := IntBuffer{0, 1, 2, 3, 4, 5}
+		b1 := b.Collect(func(x int) int {
+			return x * 2
+		})
+		TC. Identical(b1, IntBuffer{0, 2, 4, 6, 8, 10})
+
+		n := b.Inject(0, func(memo, x int) int {
+			return memo + x
+		})
+		TC. Identical(n, 15)
+
+		n = b.Cycle(3, func(i, x int) {})
+		TC.	Identical(n, 3)
+
+		n = b.Cycle(5, func(i, x int) {})
+		TC.	Identical(n, 5)
+
+		b1 = b.Combine(b.Clone(), func(x, y int) int {
+			return x + y
+		})
+		TC.	Identical(b1, IntBuffer{0, 2, 4, 6, 8, 10}).
+			Erroneous(func() {
+				IntBuffer{1, 2, 3}.Combine(b, func(x, y int) int {
+					return 0
+				})
+			})
+	}).
 	Run("Arithmetic", func(TC *Test) {
 		b := IntBuffer{5}
 		b.Negate(0)
@@ -150,24 +178,47 @@ func TestIntBuffer(t *testing.T) {
 			Refute(b1.ZeroEqual(1)).
 			Confirm(b1.ZeroGreater(1))
 	}).
-	Run("Conversion", func(TC *Test) {
+	Run("Reslicing", func(TC *Test) {
 		b := make(IntBuffer, 6)
+		h := b.SliceHeader(_INT_SIZE)
+		TC.	Identical(cap(b), h.Cap).
+			Identical(len(b), h.Len)
+
 		b1 := b.Clone()
-		bytes := make([]byte, 24)
-		TC.	Identical(b1.FloatBuffer(), make(FloatBuffer, 6)).
-			Identical(b1.ByteSlice(), bytes)
+		TC.	Identical(AsByteSlice(b1), AsByteSlice(b)).
+			Identical(AsIntBuffer(b1), AsIntBuffer(b), b).
+			Identical(AsUintBuffer(b1), AsUintBuffer(b)).
+			Identical(AsFloatBuffer(b1), AsFloatBuffer(b)).
+			Identical(AsPointerBuffer(b1), AsPointerBuffer(b))
 
 		b1[0] = 1
-		bytes[0] = 1
-		TC.	Identical(b1.ByteSlice(), bytes)
+		TC.	Different(b1, b).
+			Identical(AsIntBuffer(b), b).
+			Different(AsIntBuffer(b1), AsIntBuffer(b)).
+			Different(AsUintBuffer(b1), AsUintBuffer(b)).
+			Different(AsFloatBuffer(b1), AsFloatBuffer(b)).
+			Different(AsPointerBuffer(b1), AsPointerBuffer(b))
+	}).
+	Run("Finders", func(TC *Test) {
+		b := IntBuffer{0, 1, 2, 3, 4, 5}
+		f1 := func(x int) bool { return x >= 0 }
+		f2 := func(x int) bool { return x > 1 }
+		f3 := func(x int) bool { return x < 0 }
+		f4 := func(x int) bool { return x == 0 }
+
+		TC.	Identical(6, b.Count(f1)).
+			Identical(4, b.Count(f2)).
+			Confirm(b.Any(f1)).
+			Refute(b.Any(f3)).
+			Confirm(b.All(f1)).
+			Refute(b.All(f2)).
+			Confirm(b.None(f3)).
+			Refute(b.None(f1)).
+			Confirm(b.One(f4)).
+			Refute(b.One(f1))
 	}).
 	Run("To Do", func(TC *Test) {
-		TC.	Untested("AsIntBuffer").
-			Untested(".Collect").
-			Untested(".FloatBuffer").
-			Untested(".Feed").
-			Untested(".Pipe").
-			Unimplemented(".UintBuffer").
-			Unimplemented(".PtrBuffer")
+		TC.	Untested(".Feed").
+			Untested(".Pipe")
 	})
 }

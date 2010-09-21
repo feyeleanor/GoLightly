@@ -1,14 +1,10 @@
 package storage
 
 import "math"
-import "reflect"
-import "unsafe"
+//import "reflect"
+//import "unsafe"
 
 type FloatBuffer []float
-
-var _FLOAT = reflect.Typeof(float(0))
-var _FLOAT_SIZE = unsafe.Sizeof(float(0))
-var _FLOAT_BUFFER = reflect.Typeof(FloatBuffer{})
 
 func (b FloatBuffer) Len() int							{ return len(b) }
 func (b FloatBuffer) Cap() int							{ return cap(b) }
