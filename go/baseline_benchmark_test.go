@@ -10,6 +10,14 @@ func BenchmarkBaselineCastIntToInt32(b *testing.B) {
 	for i := 0; i < b.N; i++ { x32 = int32(x) }
 }
 
+func BenchmarkBaselineCastInt64ToUint64(b *testing.B) {
+	for i := 0; i < b.N; i++ { u64 = uint64(x64) }
+}
+
+func BenchmarkBaselineCastUint64ToInt64(b *testing.B) {
+	for i := 0; i < b.N; i++ { x64 = int64(u64) }
+}
+
 func BenchmarkBaselineVariableGet(b *testing.B) {
 	for i := 0; i < b.N; i++ { x = x }
 }
@@ -228,4 +236,18 @@ func BenchmarkBaselineNewMapLiteral(b *testing.B) {
 
 func BenchmarkBaselineNewMap(b *testing.B) {
 	for i := 0; i < b.N; i++ { h = make(map [int]int) }
+}
+
+func BenchmarkBaselineSliceCopy(b *testing.B) {
+	for i := 0; i < b.N; i++ { copy(d10, s10) }
+}
+
+func BenchmarkBaselineNewSliceAppendElement1(b *testing.B) {
+	a := []int{}
+	for i := 0; i < b.N; i++ { a = append(a, 1) }
+}
+
+func BenchmarkBaselineNewSliceAppendElement10(b *testing.B) {
+	a := []int{}
+	for i := 0; i < b.N; i++ { a = append(a, s10...) }
 }
