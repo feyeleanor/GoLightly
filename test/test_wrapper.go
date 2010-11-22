@@ -8,7 +8,7 @@ import "runtime"
 import "testing"
 
 func formatMessage(header interface{}, statements... interface{}) string {
-	return fmt.Sprintf("%v: %v", header, fmt.Sprint(statements))
+	return fmt.Sprintf("%v: %v", header, fmt.Sprint(statements...))
 }
 
 func describeMismatch(target, value interface{}) string {
@@ -65,16 +65,16 @@ func (t *Test) LogHeader() {
 
 func (t *Test) Log(comments... interface{}) {
 	t.LogHeader()
-	t.T.Log("  ", fmt.Sprint(comments))
+	t.T.Log("  ", fmt.Sprint(comments...))
 }
 
 func (t *Test) Error(comments... interface{}) {
 	t.LogHeader()
-	t.T.Error("  ", t.location, "-->", fmt.Sprint(comments))
+	t.T.Error("  ", t.location, "-->", fmt.Sprint(comments...))
 }
 
 func (t *Test) Comment(comments... interface{}) *Test {
-	t.Log(comments)
+	t.Log(comments...)
 	return t
 }
 

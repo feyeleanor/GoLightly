@@ -15,7 +15,7 @@ type TestTable struct {
 func NewTestTable(test Reduction, values... interface{}) *TestTable {
 	t := new(TestTable)
 	t.test = test
-	t.X(values)
+	t.X(values...)
 	return t
 }
 
