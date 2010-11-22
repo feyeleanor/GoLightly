@@ -25,11 +25,9 @@ func (b IntBuffer) Clone() IntBuffer {
 }
 
 func (b IntBuffer) Replicate(count int) IntBuffer {
-	l := len(b)
-	s := make(IntBuffer, l * count)
-	for i, offset := 0, 0; i < count; i++ {
-		copy(s[offset:], b)
-		offset += l
+	s := make(IntBuffer, 0, count * len(b))
+	for i := 0; i < count; i++ {
+		s = append(s, b...)
 	}
 	return s
 }

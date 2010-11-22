@@ -34,11 +34,9 @@ func (b *FloatBuffer) Shrink(count int) {
 }
 
 func (b FloatBuffer) Replicate(count int) FloatBuffer {
-	l := len(b)
-	s := make(FloatBuffer, l * count)
-	for i, offset := 0, 0; i < count; i++ {
-		copy(s[offset:], b)
-		offset += l
+	s := make(FloatBuffer, 0, count * len(b))
+	for i := 0; i < count; i++ {
+		s = append(s, b...)
 	}
 	return s
 }
