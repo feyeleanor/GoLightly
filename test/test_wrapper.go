@@ -38,10 +38,11 @@ func (t *Test) recordLocation() *Test {
 	for i, u := range t.stack_trace {
 		if f := runtime.FuncForPC(u); f != nil {
 			file, line := f.FileLine(u)
+			filepath, filename := path.Split(file)
 			if i == 0 {
-				my_path = file
-			} else if my_path != file {
-				t.location = fmt.Sprintf("%v:%v", path.Base(file), line)
+				my_path = filepath
+			} else if my_path != filepath {
+				t.location = fmt.Sprintf("%v:%v", filename, line)
 				break
 			}
 		} else {
