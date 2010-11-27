@@ -2,7 +2,7 @@ package testLightly
 
 import "fmt"
 
-type Reduction		func(y, x interface{}) interface{}
+type Reduction		func(x, y interface{}) interface{}
 type ValueSet		[]interface{}
 
 type TestTable struct {
@@ -30,8 +30,8 @@ func (t *TestTable) Y(value interface{}, compatibility... interface{}) *TestTabl
 }
 
 func (t *TestTable) Assess(T *Test) *TestTable {
-	for row, x := range t.YValues {
-		for column, y := range t.XValues {
+	for row, y := range t.YValues {
+		for column, x := range t.XValues {
 			expectation := t.compatibility[row][column]
 			if result := t.Apply(x, y); result != expectation {
 				T.Error(fmt.Sprintf("[%v, %v]", row, column), fmt.Sprintf("-> expected %v got %v", expectation, result))
