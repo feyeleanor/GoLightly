@@ -15,6 +15,15 @@ var fvarargs func(x... interface{}) = func(x... interface{}) {}
 var fint func(x int) = func(x int) {}
 var fvarints func(x... int) = func(x... int) {}
 
+type dummyInterface1 interface {
+	m1()
+}
+
+type dummyInterface2 interface {
+	dummyInterface1
+	m1arg(x interface{})
+}
+
 type dummyStructure struct {
 	i	int
 	in	interface {}
@@ -33,3 +42,4 @@ func (d *dummyStructure) m2varargs(x... interface{}) {}
 func (d *dummyStructure) m2varints(x... int) {}
 
 var dummy dummyStructure = dummyStructure{}
+var di interface{} = dummyStructure{}

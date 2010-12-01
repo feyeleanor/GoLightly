@@ -178,9 +178,39 @@ func BenchmarkBaselineTypeAssertion(b *testing.B) {
 	for i := 0; i < b.N; i++ { in = in.(int) }
 }
 
+func BenchmarkBaselineTypeAssertionEmptyInterface(b *testing.B) {
+	for i := 0; i < b.N; i++ { in = in.(interface{}) }
+}
+
+func BenchmarkBaselineTypeAssertionInterface1(b *testing.B) {
+	for i := 0; i < b.N; i++ { di = di.(dummyInterface1) }
+}
+
+func BenchmarkBaselineTypeAssertionInterface2(b *testing.B) {
+	for i := 0; i < b.N; i++ { di = di.(dummyInterface2) }
+}
+
 func BenchmarkBaselineTypeCheck(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		if _, ok := in.(int); ok {}
+	}
+}
+
+func BenchmarkBaselineTypeCheckEmptyInterface(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		if _, ok := in.(interface{}); ok {}
+	}
+}
+
+func BenchmarkBaselineTypeCheckInterface1(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		if _, ok := di.(dummyInterface1); ok {}
+	}
+}
+
+func BenchmarkBaselineTypeCheckInterface2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		if _, ok := di.(dummyInterface2); ok {}
 	}
 }
 
@@ -210,6 +240,30 @@ func BenchmarkBaselineTypeSwitchBasicTypesCase(b *testing.B) {
 		case int32:
 		case int64:
 		case int:
+		}
+	}
+}
+
+func BenchmarkBaselineTypeSwitchEmptyInterface(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		switch in := in.(type) {
+		case interface{}:
+		}
+	}
+}
+
+func BenchmarkBaselineTypeSwitchInterface1(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		switch di := di.(type) {
+		case dummyInterface1:
+		}
+	}
+}
+
+func BenchmarkBaselineTypeSwitchInterface2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		switch di := di.(type) {
+		case dummyInterface2:
 		}
 	}
 }
