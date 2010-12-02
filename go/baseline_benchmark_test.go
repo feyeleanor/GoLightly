@@ -1,25 +1,26 @@
 package baseline
 
+import "reflect"
 import "testing"
 
 func BenchmarkBaselineCastInt32ToInt(b *testing.B) {
-	for i := 0; i < b.N; i++ { x = int(x32) }
+	for i := 0; i < b.N; i++ { _ = int(x32) }
 }
 
 func BenchmarkBaselineCastIntToInt32(b *testing.B) {
-	for i := 0; i < b.N; i++ { x32 = int32(x) }
+	for i := 0; i < b.N; i++ { _ = int32(x) }
 }
 
 func BenchmarkBaselineCastInt64ToUint64(b *testing.B) {
-	for i := 0; i < b.N; i++ { u64 = uint64(x64) }
+	for i := 0; i < b.N; i++ { _ = uint64(x64) }
 }
 
 func BenchmarkBaselineCastUint64ToInt64(b *testing.B) {
-	for i := 0; i < b.N; i++ { x64 = int64(u64) }
+	for i := 0; i < b.N; i++ { _ = int64(u64) }
 }
 
 func BenchmarkBaselineVariableGet(b *testing.B) {
-	for i := 0; i < b.N; i++ { x = x }
+	for i := 0; i < b.N; i++ { _ = x }
 }
 
 func BenchmarkBaselineVariableSet(b *testing.B) {
@@ -27,7 +28,7 @@ func BenchmarkBaselineVariableSet(b *testing.B) {
 }
 
 func BenchmarkBaselineVariableGetInterface(b *testing.B) {
-	for i := 0; i < b.N; i++ { in = in }
+	for i := 0; i < b.N; i++ { _ = in }
 }
 
 func BenchmarkBaselineVariableSetInterface(b *testing.B) {
@@ -43,7 +44,7 @@ func BenchmarkBaselineVariableDecrement(b *testing.B) {
 }
 
 func BenchmarkBaselineFieldGet(b *testing.B) {
-	for i := 0; i < b.N; i++ { x = dummy.i }
+	for i := 0; i < b.N; i++ { _ = dummy.i }
 }
 
 func BenchmarkBaselineFieldSet(b *testing.B) {
@@ -51,7 +52,7 @@ func BenchmarkBaselineFieldSet(b *testing.B) {
 }
 
 func BenchmarkBaselineSliceGet(b *testing.B) {
-	for i := 0; i < b.N; i++ { x = s[0] }
+	for i := 0; i < b.N; i++ { _ = s[0] }
 }
 
 func BenchmarkBaselineSliceSet(b *testing.B) {
@@ -59,7 +60,7 @@ func BenchmarkBaselineSliceSet(b *testing.B) {
 }
 
 func BenchmarkBaselineMapGet(b *testing.B) {
-	for i := 0; i < b.N; i++ { x = h[0] }
+	for i := 0; i < b.N; i++ { _ = h[0] }
 }
 
 func BenchmarkBaselineMapSet(b *testing.B) {
@@ -68,13 +69,47 @@ func BenchmarkBaselineMapSet(b *testing.B) {
 
 func BenchmarkBaselineIf(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		if i < 1000 {}
+		if i >= 0 {}
 	}
 }
 
 func BenchmarkBaselineIfElse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		if i < 1000 {} else {}
+		if i < 0 {} else {}
+	}
+}
+
+func BenchmarkBaselineSwitchDefault(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		switch i {
+		default: {}
+		}
+	}
+}
+
+func BenchmarkBaselineSwitchOneCase(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		switch i {
+		case 0:	{}
+		}
+	}
+}
+
+func BenchmarkBaselineSwitchTwoCases(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		switch i {
+		case 0:	{}
+		case 1:	{}
+		}
+	}
+}
+
+func BenchmarkBaselineSwitchTwoCasesFallthrough(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		switch i {
+		case 0:	fallthrough
+		case 1:	{}
+		}
 	}
 }
 
@@ -175,19 +210,31 @@ func BenchmarkBaselineMethodCallIndirect5Ints(b *testing.B) {
 }
 
 func BenchmarkBaselineTypeAssertion(b *testing.B) {
-	for i := 0; i < b.N; i++ { in = in.(int) }
+	for i := 0; i < b.N; i++ { _ = in.(int) }
 }
 
 func BenchmarkBaselineTypeAssertionEmptyInterface(b *testing.B) {
-	for i := 0; i < b.N; i++ { in = in.(interface{}) }
+	for i := 0; i < b.N; i++ { _ = in.(interface{}) }
 }
 
 func BenchmarkBaselineTypeAssertionInterface1(b *testing.B) {
-	for i := 0; i < b.N; i++ { di = di.(dummyInterface1) }
+	for i := 0; i < b.N; i++ { _ = di.(dummyInterface1) }
 }
 
 func BenchmarkBaselineTypeAssertionInterface2(b *testing.B) {
-	for i := 0; i < b.N; i++ { di = di.(dummyInterface2) }
+	for i := 0; i < b.N; i++ { _ = di.(dummyInterface2) }
+}
+
+func BenchmarkBaselineTypeReflectPrimitiveToValue(b *testing.B) {
+	for i := 0; i < b.N; i++ { reflect.NewValue(in) }
+}
+
+func BenchmarkBaselineTypeReflectSliceToValue(b *testing.B) {
+	for i := 0; i < b.N; i++ { reflect.NewValue(s) }
+}
+
+func BenchmarkBaselineTypeReflectStructToValue(b *testing.B) {
+	for i := 0; i < b.N; i++ { reflect.NewValue(dummy) }
 }
 
 func BenchmarkBaselineTypeCheck(b *testing.B) {
@@ -216,7 +263,7 @@ func BenchmarkBaselineTypeCheckInterface2(b *testing.B) {
 
 func BenchmarkBaselineTypeSwitchOneCase(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		switch in := in.(type) {
+		switch _ := in.(type) {
 		case int:
 		}
 	}
@@ -224,7 +271,7 @@ func BenchmarkBaselineTypeSwitchOneCase(b *testing.B) {
 
 func BenchmarkBaselineTypeSwitchBasicTypesCase(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		switch in := in.(type) {
+		switch _ := in.(type) {
 		case uint8:
 		case uint16:
 		case uint32:
@@ -246,7 +293,7 @@ func BenchmarkBaselineTypeSwitchBasicTypesCase(b *testing.B) {
 
 func BenchmarkBaselineTypeSwitchEmptyInterface(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		switch in := in.(type) {
+		switch _ := in.(type) {
 		case interface{}:
 		}
 	}
@@ -254,7 +301,7 @@ func BenchmarkBaselineTypeSwitchEmptyInterface(b *testing.B) {
 
 func BenchmarkBaselineTypeSwitchInterface1(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		switch di := di.(type) {
+		switch _ := di.(type) {
 		case dummyInterface1:
 		}
 	}
@@ -262,34 +309,34 @@ func BenchmarkBaselineTypeSwitchInterface1(b *testing.B) {
 
 func BenchmarkBaselineTypeSwitchInterface2(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		switch di := di.(type) {
+		switch _ := di.(type) {
 		case dummyInterface2:
 		}
 	}
 }
 
 func BenchmarkBaselineNewStructureLiteral(b *testing.B) {
-	for i := 0; i < b.N; i++ { dummy = dummyStructure{} }
+	for i := 0; i < b.N; i++ { _ = dummyStructure{} }
 }
 
 func BenchmarkBaselineNewStructure(b *testing.B) {
-	for i := 0; i < b.N; i++ { dummy = *new(dummyStructure) }
+	for i := 0; i < b.N; i++ { _ = *new(dummyStructure) }
 }
 
 func BenchmarkBaselineNewSliceLiteral(b *testing.B) {
-	for i := 0; i < b.N; i++ { s = []int{0, 1} }
+	for i := 0; i < b.N; i++ { _ = []int{0, 1} }
 }
 
 func BenchmarkBaselineNewSlice(b *testing.B) {
-	for i := 0; i < b.N; i++ { s = make([]int, 2) }
+	for i := 0; i < b.N; i++ { _ = make([]int, 2) }
 }
 
 func BenchmarkBaselineNewMapLiteral(b *testing.B) {
-	for i := 0; i < b.N; i++ { h = map [int]int{} }
+	for i := 0; i < b.N; i++ { _ = map [int]int{} }
 }
 
 func BenchmarkBaselineNewMap(b *testing.B) {
-	for i := 0; i < b.N; i++ { h = make(map [int]int) }
+	for i := 0; i < b.N; i++ { _ = make(map [int]int) }
 }
 
 func BenchmarkBaselineSliceCopy(b *testing.B) {
@@ -297,11 +344,9 @@ func BenchmarkBaselineSliceCopy(b *testing.B) {
 }
 
 func BenchmarkBaselineNewSliceAppendElement1(b *testing.B) {
-	a := []int{}
-	for i := 0; i < b.N; i++ { a = append(a, 1) }
+	for i := 0; i < b.N; i++ { _ = append(s, 1) }
 }
 
 func BenchmarkBaselineNewSliceAppendElement10(b *testing.B) {
-	a := []int{}
-	for i := 0; i < b.N; i++ { a = append(a, s10...) }
+	for i := 0; i < b.N; i++ { _ = append(s, s10...) }
 }
