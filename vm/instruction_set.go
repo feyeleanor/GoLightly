@@ -14,10 +14,10 @@ type OpCode struct {
 	data	IntBuffer
 }
 func (o *OpCode) Similar(p *OpCode) bool {
-	return o.code == p.code && o.data.Len() == p.data.Len()
+	return o.code == p.code && len(o.data) == len(p.data)
 }
 func (o *OpCode) Identical(p *OpCode) bool {
-	return reflect.DeepEqual(o.data, &p.data)
+	return reflect.DeepEqual(o, p)
 }
 func (o *OpCode) Replace(p *OpCode) {
 	o.code = p.code
