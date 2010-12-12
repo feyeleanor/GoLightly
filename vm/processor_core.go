@@ -8,31 +8,38 @@ import "container/vector"
 import . "golightly/storage"
 import "syscall"
 
-type ExecutionFlags struct {
-	Running				bool
-	Illegal_Operation	bool
-	Stack_Underflow		bool
-	Segmentation_Error	bool
-	Divide_by_Zero		bool
-}
-func (f *ExecutionFlags) Clear() {
-	*f = ExecutionFlags{}
+type IsExecutable interface {
+	Map(f interface{}) interface{}
+	Reduce(f interface{}) interface{}
 }
 
-type ProcessorCore struct {
-	ExecutionFlags
-	*InstructionSet
-	IOController
-	R				*Vector
-	M				*Vector
+type Thread struct {
+	Running			bool
+	R				IntBuffer
+	M				IntBuffer
 	CS				vector.IntVector
 	DS				vector.IntVector
-	*Program
+	PC				int
+	Program
+}
+func (t *Thread) I() OpCode							{ return t.Program[t.PC] }
+func (t *Thread) ValidPC() bool						{ return t.PC > -1 && t.PC < len(t.Program) }
+func (t *Thread) Call(location int) {
+	t.CS.Push(t.PC)
+	t.PC = location
+}
+func (t *Thread) Return() {
+	t.PC = t.CS.Pop() + 1
+}
+
+
+type ProcessorCore struct {
+	*InstructionSet
+	IOController
+	Thread
 }
 func (p *ProcessorCore) Init(registers int, instructions *InstructionSet) {
-	p.R = &Vector{make([]int, registers)}
-	p.M = nil
-	p.IOController.Init()
+	p.Thread = Thread{ R: make(IntBuffer, registers) }
 	if instructions == nil {
 		p.InstructionSet = new(InstructionSet)
 		p.InstructionSet.Init()
@@ -40,209 +47,136 @@ func (p *ProcessorCore) Init(registers int, instructions *InstructionSet) {
 	} else {
 		p.InstructionSet = instructions
 	}
-	p.ExecutionFlags.Clear()
-	p.Program = new(Program)
-}
-func (p *ProcessorCore) ValidPC() bool {
-	return p.Running && p.Program.ValidPC()
 }
 
 //	Make a copy of the current processor, binding it to the current processor with
 //	the supplied io channel
-func (p *ProcessorCore) Clone(c chan *Vector) (q *ProcessorCore, i int) {
+func (p *ProcessorCore) Clone(c chan IntBuffer) (q *ProcessorCore, i int) {
 	q = new(ProcessorCore)
-	q.Init(p.R.Len(), p.InstructionSet)
-	q.IOController.Open(c)
-	p.IOController.Open(c)
-	i = p.IOController.Len() - 1
+	q.Init(len(p.R), p.InstructionSet)
+	q.IOController = append(q.IOController, c)
+	p.IOController = append(p.IOController, c)
+	i = len(p.IOController) - 1
 	return
 }
 func (p *ProcessorCore) DefineInstructions() {
-	p.Define("noop",	func (o *IntBuffer) {})						//	NOOP
-	p.Define("nsleep",	func (o *IntBuffer) {							//	NSLEEP	n
-		syscall.Sleep(int64((*o)[0]))
-	})
-	p.Define("sleep",	func (o *IntBuffer) {							//	SLEEP	n
-		syscall.Sleep(int64((*o)[0]) << 32)
-	})
-	p.Define("halt",	func (o *IntBuffer) { p.Running = false })		//	HALT
-	p.Define("jmp",		func (o *IntBuffer) {							//	JMP		n
-		p.JumpRelative((*o)[0])
-	})
-	p.Define("jmpz",	func (o *IntBuffer) {							//	JMPZ	r, n
-		if p.R.IntBuffer.ZeroEqual((*o)[0]) { p.JumpRelative((*o)[1]) }
-	})
-	p.Define("jmpnz",	func (o *IntBuffer) {							//	JMPNZ	r, n
-		if !p.R.IntBuffer.ZeroEqual((*o)[0]) { p.JumpRelative((*o)[1]) }
-	})
-	p.Define("call",	func (o *IntBuffer) { p.Call((*o)[0]) })		//	CALL	n
-	p.Define("ret",		func (o *IntBuffer) { p.Return() })			//	RET
-	p.Define("push",	func (o *IntBuffer) {							//	PUSH	r
-		p.DS.Push(p.R.IntBuffer[(*o)[0]])
-	})
-	p.Define("pop",		func (o *IntBuffer) {							//	POP		r
-		p.R.IntBuffer[(*o)[0]] = p.DS.Pop()
-	})
-	p.Define("cld",		func (o *IntBuffer) {							//	CLD		r, v
-		p.R.IntBuffer[(*o)[0]] = (*o)[1]
-	})
-	p.Define("send",	func (o *IntBuffer) {							//	SEND	c
-		p.IOController.Send((*o)[0], p.M)
-	})
-	p.Define("recv",	func (o *IntBuffer) {							//	RECV	c
-		p.M = p.IOController.Receive((*o)[0])
-	})
-	p.Define("inc",		func (o *IntBuffer) {							//	INC		r
-		p.R.IntBuffer.Increment((*o)[0])
-	})
-	p.Define("dec",		func (o *IntBuffer) {							//	DEC		r
-		p.R.IntBuffer.Decrement((*o)[0])
-	})
-	p.Define("add",		func (o *IntBuffer) {							//	ADD		r1, r2
-		p.R.IntBuffer.Add((*o)[0], (*o)[1])
-	})
-	p.Define("sub",		func (o *IntBuffer) {							//	SUB		r1, r2
-		p.R.IntBuffer.Subtract((*o)[0], (*o)[1])
-	})
-	p.Define("mul",		func (o *IntBuffer) {							//	MUL		r1, r2
-		p.R.IntBuffer.Multiply((*o)[0], (*o)[1])
-	})
-	p.Define("div",		func (o *IntBuffer) {							//	DIV		r1, r2
-		if p.R.IntBuffer.ZeroEqual((*o)[1]) {
-			p.DivideByZero()
-		} else {
-			p.R.IntBuffer.Divide((*o)[0], (*o)[1])
-		}
-	})
-	p.Define("and",		func (o *IntBuffer) {							//	AND		r1, r2
-		p.R.IntBuffer.And((*o)[0], (*o)[1])
-	})
-	p.Define("or",		func (o *IntBuffer) {							//	OR		r1, r2
-		p.R.IntBuffer.Or((*o)[0], (*o)[1])
-	})
-	p.Define("xor",		func (o *IntBuffer) {							//	XOR		r1, r2
-		p.R.IntBuffer.Xor((*o)[0], (*o)[1])
-	})
+	p.Operator("noop",		func () {})																							//	NOOP
+	p.Operator("nsleep",	func (n int64) { syscall.Sleep(n) })																//	NSLEEP	n
+	p.Operator("sleep",		func (n int64) { syscall.Sleep(n << 32) })															//	SLEEP	n
+	p.Movement("halt",		func () { p.Running = false })																		//	HALT
+	p.Movement("jmp",		func (n int) { p.PC += n })																			//	JMP		n
+	p.Movement("jmpz",		func (o []int) { if p.R.ZeroEqual(o[0]) { p.PC += o[1] } })											//	JMPZ	r, n
+	p.Movement("jmpnz",		func (o []int) { if !p.R.ZeroEqual(o[0]) { p.PC += o[1] } })										//	JMPNZ	r, n
+	p.Movement("call",		func (n int) { p.Call(n) })																			//	CALL	n
+	p.Movement("ret",		func () { p.Return() })																				//	RET
+	p.Operator("push",		func (r int) { p.DS.Push(p.R[r]) })																	//	PUSH	r
+	p.Operator("pop",		func (r int) { p.R[r] = p.DS.Pop() })																//	POP		r
+	p.Operator("cld",		func (o []int) { p.R[o[0]] = o[1] })																//	CLD		r, v
+	p.Operator("send",		func (c int) { p.IOController.Send(c, p.M) })														//	SEND	c
+	p.Operator("recv",		func (c int) { p.M = p.IOController.Receive(c) })													//	RECV	c
+	p.Operator("inc",		func (r int) { p.R.Increment(r) })																	//	INC		r
+	p.Operator("dec",		func (r int) { p.R.Decrement(r) })																	//	DEC		r
+	p.Operator("add",		func (o []int) { p.R.Add(o[0], o[1]) })																//	ADD		r1, r2
+	p.Operator("sub",		func (o []int) { p.R.Subtract(o[0], o[1]) })														//	SUB		r1, r2
+	p.Operator("mul",		func (o []int) { p.R.Multiply(o[0], o[1]) })														//	MUL		r1, r2
+	p.Operator("div",		func (o []int) { p.R.Divide(o[0], o[1]) })															//	DIV		r1, r2
+	p.Operator("and",		func (o []int) { p.R.And(o[0], o[1]) })																//	AND		r1, r2
+	p.Operator("or",		func (o []int) { p.R.Or(o[0], o[1]) })																//	OR		r1, r2
+	p.Operator("xor",		func (o []int) { p.R.Xor(o[0], o[1]) })																//	XOR		r1, r2
 }
-func (p *ProcessorCore) JumpTo(ops int) {
-	p.pc = ops - 1
-}
-func (p *ProcessorCore) JumpRelative(ops int) {
-	p.pc += ops - 1
-}
-func (p *ProcessorCore) Call(location int) {
-	p.CS.Push(p.pc)
-	p.pc = location - 1
-}
-func (p *ProcessorCore) Return() {
-	if p.CS.Len() > 0 {
-		p.pc = p.CS.Pop()
-	} else {
-		p.Running = false
-		p.Stack_Underflow = true
-	}
-}
-func (p *ProcessorCore) LoadProgram(program *Program) {
-	p.Program = program
-	p.R.ClearAll()
+func (p *ProcessorCore) LoadProgram(program Program) {
+	p.Program = make(Program, len(program))
+	copy(p.Program, program)
+	IntVector(p.R).ClearAll()
 	p.M = nil
-	p.ExecutionFlags.Clear()
-	p.pc = 0
-}
-func (p *ProcessorCore) DivideByZero() {
-	p.Divide_by_Zero = true
-	p.Running = false
+	p.PC = 0
 }
 func (p *ProcessorCore) ResetState() {
-	p.R.ClearAll()
+	IntVector(p.R).ClearAll()
 	p.M = nil
-	p.ExecutionFlags.Clear()
-	p.pc = 0
-}
-func (p *ProcessorCore) Run() {
-	p.Running = true
-	for {
-		if -1 < p.pc && p.pc < len(p.code) {
-			if !p.Invoke(p.code[p.pc]) {
-				p.Running = false
-				p.Illegal_Operation = true
-			}
-		} else {
-			p.Running = false
-		}
-		if !p.Running { break }
-		p.pc += 1
-	}
-}
-func (p *ProcessorCore) RunInline() {
-	p.Running = true
-	for {
-		if -1 < p.pc && p.pc < len(p.code) {
-			p.InlinedInstructions(p.code[p.pc])
-		} else {
-			p.Running = false
-		}
-		if !p.Running { break }
-		p.pc += 1
-	}
+	p.PC = 0
 }
 func (p *ProcessorCore) Execute() {
-	if 0 <= p.pc && p.pc < len(p.code) {
-		if !p.Invoke(p.code[p.pc]) {
+	o := p.Program[p.PC]
+	switch data := o.data.(type) {
+	case int:
+		p.ops[o.code].(func (int))(data)
+	case []int:
+		p.ops[o.code].(func ([]int))(data)
+	default:
+		panic(nil)
+	}
+	p.PC += o.movement
+}
+func (p *ProcessorCore) Run() {
+	defer func() {
+		if x := recover(); x != nil {
 			p.Running = false
-			p.Illegal_Operation = true
 		}
-	} else {
-		p.Running = false
+	}()
+	p.Running = true
+	for p.Running {
+		p.Execute()
 	}
 }
-func (p *ProcessorCore) ExecuteInline() {
-	if -1 < p.pc && p.pc < len(p.code) {
-		p.InlinedInstructions(p.code[p.pc])
-	} else {
-		p.Running = false
-	}
+
+type InlinedProcessorCore struct {
+	ProcessorCore
 }
-func (p *ProcessorCore) InlinedInstructions(o *OpCode) {
-	switch o.code {
+func (p *InlinedProcessorCore) Execute() {
+	o := p.Program[p.PC]
+	switch data := o.data.(type) {
+	case int:
+		switch o.code {
+		case 4:			p.PC += data
+		case 7:			p.CS.Push(p.PC)
+						p.PC = data
+		case 9:			p.DS.Push(p.R[data])
+		case 10:		p.R[data] = p.DS.Pop()
+		case 12:		p.IOController.Send(data, p.M)
+		case 13:		p.M = p.IOController.Receive(data)
+		case 14:		p.R.Increment(data)
+		case 15:		p.R.Decrement(data)
+		default:		p.ProcessorCore.Execute()
+		}
+	case int64:
+		switch o.code {
+		case 1:			syscall.Sleep(data)
+		case 2:			syscall.Sleep(data << 32)
+		default:		p.ProcessorCore.Execute()
+		}
+	case []int:
+		switch o.code {
+		case 5:			if p.R.ZeroEqual(data[0]) { p.PC += data[1] } else { p.PC++ }
+		case 6:			if !p.R.ZeroEqual(data[0]) { p.PC += data[1] } else { p.PC++ }
+		case 11:		p.R[data[0]] = data[1]
+		case 16:		p.R.Add(data[0], data[1])
+		case 17:		p.R.Subtract(data[0], data[1])
+		case 18:		p.R.Multiply(data[0], data[1])
+		case 19:		p.R.Divide(data[0], data[1])
+		case 20:		p.R.And(data[0], data[1])
+		case 21:		p.R.Or(data[0], data[1])
+		case 22:		p.R.Xor(data[0], data[1])
+		default:		p.ProcessorCore.Execute()
+		}
+	default:
+		switch o.code {
 		case 0:
-		case 1:			syscall.Sleep(int64(o.data[0]))
-		case 2:			syscall.Sleep(int64(o.data[0]) << 32)
 		case 3:			p.Running = false
-		case 4:			p.pc += o.data[0] - 1
-		case 5:			if p.R.IntBuffer.ZeroEqual(o.data[0]) { p.pc += o.data[1] - 1 }
-		case 6:			if !p.R.IntBuffer.ZeroEqual(o.data[0]) { p.pc += o.data[1] - 1 }
-		case 7:			p.CS.Push(p.pc)
-						p.pc = o.data[0] - 1
-		case 8:			if p.CS.Len() > 0 {
-							p.pc = p.CS.Pop()
-						} else {
-							p.Running = false
-							p.Stack_Underflow = true
-						}
-		case 9:			p.DS.Push(p.R.IntBuffer[o.data[0]])
-		case 10:		p.R.IntBuffer[o.data[0]] = p.DS.Pop()
-		case 11:		p.R.IntBuffer[o.data[0]] = o.data[1]
-		case 12:		p.IOController.Send(o.data[0], p.M)
-		case 13:		p.M = p.IOController.Receive(o.data[0])
-		case 14:		p.R.IntBuffer.Increment(o.data[0])
-		case 15:		p.R.IntBuffer.Decrement(o.data[0])
-		case 16:		p.R.IntBuffer.Add(o.data[0], o.data[1])
-		case 17:		p.R.IntBuffer.Subtract(o.data[0], o.data[1])
-		case 18:		p.R.IntBuffer.Multiply(o.data[0], o.data[1])
-		case 19:		d := o.data[1]
-						if d == 0 {
-							p.Divide_by_Zero = true
-							p.Running = false
-						} else {
-							p.R.IntBuffer.Divide(o.data[0], d)
-						}
-		case 20:		p.R.IntBuffer.And(o.data[0], o.data[1])
-		case 21:		p.R.IntBuffer.Or(o.data[0], o.data[1])
-		case 22:		p.R.IntBuffer.Xor(o.data[0], o.data[1])
-		default:		if !p.Invoke(o) {
-							p.Running = false
-							p.Illegal_Operation = true
-						}
+		case 8:			p.PC = p.CS.Pop() + 1
+		default:		p.ProcessorCore.Execute()
+		}
+	}
+	p.PC += o.movement
+}
+func (p *InlinedProcessorCore) Run() {
+	defer func() {
+		if x := recover(); x != nil {
+			p.Running = false
+		}
+	}()
+	p.Running = true
+	for p.Running {
+		p.Execute()
 	}
 }

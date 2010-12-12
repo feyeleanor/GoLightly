@@ -7,26 +7,24 @@ import . "golightly/test"
 func TestIOController(t *testing.T) {
 	NewTest(t).
 	Run("Creation", func(TC *Test) {
-		i := new(IOController)
-		i.Init()
-		TC.	Identical(i.Len(), i.Cap(), 0)
+		i := IOController{}
+		TC.	Identical(len(i), cap(i), 0)
 
-		i.Open(make(chan *Vector))
-		TC.	Identical(i.Len(), i.Cap(), 1)
+		i = append(i, make(chan IntBuffer))
+		TC.	Identical(len(i), cap(i), 1)
 
-		i.Open(make(chan *Vector, 256))
-		TC.	Identical(i.Len(), i.Cap(), 2)
+		i = append(i, make(chan IntBuffer, 256))
+		TC.	Identical(len(i), cap(i), 2)
 
 		ioc := i.Clone()
-		TC.	Identical(ioc.Len(), ioc.Cap(), 2)
+		TC.	Identical(len(ioc), cap(ioc), 2)
 	}).
 	Run("Traffic", func(TC *Test) {
-		i := new(IOController)
-		i.Init()
-		i.Open(make(chan *Vector))
-		i.Open(make(chan *Vector, 256))
+		i := IOController{}
+		i = append(i, make(chan IntBuffer))
+		i = append(i, make(chan IntBuffer, 256))
 
-		b := &Vector{IntBuffer{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}}
+		b := IntBuffer{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 		i.Send(0, b)
 		TC.Identical(b, i.Receive(0))
 	})

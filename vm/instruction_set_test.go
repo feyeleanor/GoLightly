@@ -1,7 +1,6 @@
 package vm
 
 import "testing"
-import . "golightly/storage"
 import . "golightly/test"
 
 func TestInstructionSet(t *testing.T) {
@@ -11,42 +10,43 @@ func TestInstructionSet(t *testing.T) {
 
 		i := new(InstructionSet)
 		i.Init()
-		i.Define("zero",	func (b *IntBuffer) { REGISTER = 0 })
-		i.Define("one",		func (b *IntBuffer) { REGISTER = 1 })
-		i.Define("two",		func (b *IntBuffer) { REGISTER = 2 })
-		i.Define("three",	func (b *IntBuffer) { REGISTER = 3 })
-		i.Define("four",	func (b *IntBuffer) { REGISTER = 4 })
-		TC.	Identical(i.Len(), 5).
-			Confirm(i.Exists("zero")).
-			Confirm(i.Exists("one")).
-			Confirm(i.Exists("two")).
-			Confirm(i.Exists("three")).
-			Confirm(i.Exists("four"))
+		i.Operator("zero",	func (b []int) { REGISTER = 0 })
+		i.Operator("one",	func (b []int) { REGISTER = 1 })
+		i.Operator("two",	func (b []int) { REGISTER = 2 })
+		i.Operator("three",	func (b []int) { REGISTER = 3 })
+		i.Operator("four",	func (b []int) { REGISTER = 4 })
+		TC.	Identical(i.Len(), 5)
+
+		NewTestTable(func(x, y interface{}) interface{} {
+			return y.(*InstructionSet).Exists(x.(string))
+		}).
+		X(		"zero",		"one",		"two",		"three",	"four",		"five"	).
+		Y(	i,	true,		true,		true,		true,		true,		false	).
+		Assess(TC)
 
 		for j, f := range i.ops {
-			o := OpCode{code: j}
-			f.(func (b *IntBuffer))(&o.data)
-			TC.Identical(REGISTER, j)
-		}
-		for j := 0; j < i.Len(); j++ {
-			i.Invoke(&OpCode{code: j})
-			TC.Identical(REGISTER, j)
+			f.(func (b []int))([]int{})
+			TC.Identical(j, REGISTER)
+			i.Invoke(&OpCode{code: j, data: []int{}})
+			TC.Identical(j, REGISTER)
 		}
 
-		TC.	Identical(i.Code("zero"), 0).
-			Identical(i.Code("two"), 2).
-			Identical(i.Code("five"), -1)
+		NewTestTable(func(x, y interface{}) interface{} {
+			return y.(*InstructionSet).Instruction(x.(string)).op
+		}).
+		X(		"zero",		"one",		"two",		"three",	"four",		"five"	).
+		Y(	i,		0,			1,			2,			3,			4,		   nil	).
+		Assess(TC)
 
+		ZERO_NIL	:= i.Assemble("zero", nil)
+		ZERO_ZERO	:= i.Assemble("zero", []int{0})
+		ZERO_ONE 	:= i.Assemble("zero", []int{1})
+		ONE_NIL		:= i.Assemble("one", nil)
+		ONE_ZERO	:= i.Assemble("one", []int{0})
+		ONE_ONE		:= i.Assemble("one", []int{1})
 
-		ZERO_NIL	:= i.OpCode("zero", nil)
-		ZERO_ZERO	:= i.OpCode("zero", &IntBuffer{0})
-		ZERO_ONE 	:= i.OpCode("zero", &IntBuffer{1})
-		ONE_NIL		:= i.OpCode("one", nil)
-		ONE_ZERO	:= i.OpCode("one", &IntBuffer{0})
-		ONE_ONE		:= i.OpCode("one", &IntBuffer{1})
-
-		NewTestTable(func(y, x interface{}) interface{} {
-			return y.(*OpCode).Identical(x.(*OpCode))
+		NewTestTable(func(x, y interface{}) interface{} {
+			return x.(OpCode).Identical(y.(OpCode))
 		}).
 		X(				ZERO_NIL,	ZERO_ZERO,	ZERO_ONE,	ONE_NIL,	ONE_ZERO,	ONE_ONE	).
 		Y(	ZERO_NIL,	true,		false,		false,		false,		false,		false	).
@@ -57,8 +57,8 @@ func TestInstructionSet(t *testing.T) {
 		Y(	ONE_ONE,	false,		false,		false,		false,		false,		true	).
 		Assess(TC)
 
-		NewTestTable(func(y, x interface{}) interface{} {
-			return y.(*OpCode).Similar(x.(*OpCode))
+		NewTestTable(func(x, y interface{}) interface{} {
+			return x.(OpCode).Similar(y.(OpCode))
 		}).
 		X(				ZERO_NIL,	ZERO_ZERO,	ZERO_ONE,	ONE_NIL,	ONE_ZERO,	ONE_ONE	).
 		Y(	ZERO_NIL,	true,		false,		false,		false,		false,		false	).

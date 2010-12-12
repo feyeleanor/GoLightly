@@ -1,4 +1,6 @@
 package vm
+
+import . "golightly/storage"
 import "testing"
 
 func BenchmarkCreateProcessorCore(b *testing.B) {
@@ -12,7 +14,7 @@ func BenchmarkCloneProcessorCore(b *testing.B) {
 	b.StopTimer()
 		p := new(ProcessorCore)
 		p.Init(32, nil)
-		c := make(chan *Vector)
+		c := make(chan IntBuffer)
 	b.StartTimer()
     for i := 0; i < b.N; i++ { p.Clone(c) }
 }
@@ -39,7 +41,7 @@ func BenchmarkStepForward(b *testing.B) {
 		p.Init(32, nil)
 		p.LoadProgram(simpleProgram(p))
 	b.StartTimer()
-    for i := 0; i < b.N; i++ { p.StepForward() }
+    for i := 0; i < b.N; i++ { p.PC++ }
 }
 
 func BenchmarkStepBack(b *testing.B) {
@@ -48,7 +50,7 @@ func BenchmarkStepBack(b *testing.B) {
 		p.Init(32, nil)
 		p.LoadProgram(simpleProgram(p))
 	b.StartTimer()
-    for i := 0; i < b.N; i++ { p.StepBack() }
+    for i := 0; i < b.N; i++ { p.PC++ }
 }
 
 func BenchmarkStepping(b *testing.B) {
@@ -58,8 +60,8 @@ func BenchmarkStepping(b *testing.B) {
 		p.LoadProgram(simpleProgram(p))
 	b.StartTimer()
     for i := 0; i < b.N; i++ {
-		p.StepForward()
-		p.StepBack()
+		p.PC++
+		p.PC++
 	}
 }
 
@@ -70,22 +72,22 @@ func BenchmarkStepExecuteRewind(b *testing.B) {
 		p.LoadProgram(simpleProgram(p))
 	b.StartTimer()
     for i := 0; i < b.N; i++ {
-		p.StepForward()
+		p.PC++
 		p.Execute()
-		p.StepBack()
+		p.PC++
 	}
 }
 
 func BenchmarkStepExecuteInlineRewind(b *testing.B) {
 	b.StopTimer()
-		p := new(ProcessorCore)
+		p := new(InlinedProcessorCore)
 		p.Init(32, nil)
 		p.LoadProgram(simpleProgram(p))
 	b.StartTimer()
     for i := 0; i < b.N; i++ {
-		p.StepForward()
-		p.ExecuteInline()
-		p.StepBack()
+		p.PC++
+		p.Execute()
+		p.PC++
 	}
 }
 
@@ -95,7 +97,7 @@ func BenchmarkJumpTo(b *testing.B) {
 		p.Init(32, nil)
 		p.LoadProgram(simpleProgram(p))
 	b.StartTimer()
-    for i := 0; i < b.N; i++ { p.JumpTo(0) }
+    for i := 0; i < b.N; i++ { p.PC = 0 }
 }
 
 func BenchmarkJumpRelative(b *testing.B) {
@@ -104,7 +106,7 @@ func BenchmarkJumpRelative(b *testing.B) {
 		p.Init(32, nil)
 		p.LoadProgram(simpleProgram(p))
 	b.StartTimer()
-    for i := 0; i < b.N; i++ { p.JumpRelative(0) }
+    for i := 0; i < b.N; i++ { p.PC += 0 }
 }
 
 func BenchmarkProgramRun(b *testing.B) {
@@ -118,9 +120,9 @@ func BenchmarkProgramRun(b *testing.B) {
 
 func BenchmarkProgramRunInline(b *testing.B) {
 	b.StopTimer()
-		p := new(ProcessorCore)
+		p := new(InlinedProcessorCore)
 		p.Init(32, nil)
 		p.LoadProgram(advancedProgram(p))
 	b.StartTimer()
-    for i := 0; i < b.N; i++ { p.RunInline(); p.ResetState() }
+    for i := 0; i < b.N; i++ { p.Run(); p.ResetState() }
 }

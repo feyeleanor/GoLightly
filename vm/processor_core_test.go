@@ -1,38 +1,37 @@
 package vm
 
 import "testing"
-import . "golightly/storage"
 import . "golightly/test"
 
 const BUFFER_ALLOCATION = 32
 
-func simpleProgram(p *ProcessorCore) *Program {
-	code := []*OpCode{
-		p.OpCode("cld", &IntBuffer{0, 37, 0}),				//	cld		0, 37
-		p.OpCode("inc", &IntBuffer{0, 0, 0}),				//	inc		0
-		p.OpCode("inc", &IntBuffer{0, 0, 0}),				//	inc		0
-		p.OpCode("dec", &IntBuffer{0, 0, 0}),				//	dec		0
-		p.OpCode("inc", &IntBuffer{0, 0, 0}),				//	inc		0
-		p.OpCode("dec", &IntBuffer{0, 0, 0}),				//	dec		0
-		p.OpCode("dec", &IntBuffer{0, 0, 0}),				//	dec		0
-		&OpCode{99, IntBuffer{0, 0, 0}},					//	illegal operation
+func simpleProgram(a Assembler) Program {
+	return Program{ a.Assemble("cld", []int{0, 37}),				//	cld		R0, 37
+					a.Assemble("inc", 0),							//	inc		R0
+					a.Assemble("inc", 0),							//	inc		R0
+					a.Assemble("dec", 0),							//	dec		R0
+					a.Assemble("inc", 0),							//	inc		R0
+					a.Assemble("dec", 0),							//	dec		R0
+					a.Assemble("dec", 0),							//	dec		R0
+					OpCode{99,	1,	nil},							//	illegal operation
 	}
-	return &Program{code: code}
 }
 
-func advancedProgram(p *ProcessorCore) *Program {
-	code := []*OpCode{
-		p.OpCode("cld",		&IntBuffer{0, 1000,	0}),		//	0	cld		R0, 1000
-		p.OpCode("call",	&IntBuffer{5, 0,	0}),			//	1	call	5
-		p.OpCode("dec",		&IntBuffer{0, 0,	0}),			//	2	dec		R0
-		p.OpCode("jmpnz",	&IntBuffer{0, -2,	0}),			//	3	jmpnz	R0, -2
-		p.OpCode("halt",	&IntBuffer{0, 0,	0}),			//	4	halt
-		p.OpCode("push",	&IntBuffer{0, 0,	0}),			//	5	push	R0
-		p.OpCode("inc",		&IntBuffer{1, 0,	0}),			//	6	inc		R1
-		p.OpCode("pop",		&IntBuffer{0, 0,	0}),			//	7	pop		R0
-		p.OpCode("ret",		&IntBuffer{0, 0,	0}),			//	8	ret
+func intermediateProgram(a Assembler) Program {
+	return Program{ a.Assemble("cld", []int{0, 1}),					//	0	cld		R0, 1
+					a.Assemble("call", 4),							//	1	call	5
+					a.Assemble("jmpnz",	[]int{0, -1}),				//	2	jmpnz	R0, -1
+					a.Assemble("halt", nil),						//	3	halt
+					a.Assemble("dec", 0),							//	4	dec		R0
+					a.Assemble("inc", 1),							//	5	inc		R1
+					a.Assemble("ret", nil),							//	6	ret
 	}
-	return &Program{code: code}
+}
+
+func advancedProgram(a Assembler) Program {
+	program := intermediateProgram(a)
+	program[0].data = []int{0, 1000}
+	return program
 }
 
 func TestProcessorCore(t *testing.T) {
@@ -40,58 +39,67 @@ func TestProcessorCore(t *testing.T) {
 	Run("Creation", func(TC *Test) {
 		p := new(ProcessorCore)
 		p.Init(BUFFER_ALLOCATION, nil)
-		for i := 0; i < p.R.Len(); i++ {
-			TC.	Identical(p.R.IntBuffer[i], 0)
+		for _, v := range p.R {
+			TC.	Identical(v, 0)
 		}
-		TC.	Identical(BUFFER_ALLOCATION, p.R.Len(), p.R.Cap()).
+		TC.	Identical(BUFFER_ALLOCATION, len(p.R), cap(p.R)).
 			Refute(p.Running).
 			Refute(p.ValidPC()).
-			Identical(p.pc, 0).
+			Identical(p.PC, 0).
 			Confirm(p.M == nil)
 	}).
 	Run("Basic Instruction Stepping", func(TC *Test) {
 		p := new(ProcessorCore)
 		p.Init(BUFFER_ALLOCATION, nil)
 
+		I := func() { p.I() }
+
 		program := simpleProgram(p)
+		TC.	Identical(len(program), 8)
+
 		p.LoadProgram(program)
-		TC.	Identical(p.I(), program.code[0]).
-			Identical(p.pc, 0).
-			Confirm(p.Program.ValidPC()).
-			Refute(p.ValidPC())
+		TC.	Identical(len(program), len(p.Program)).
+			Safe(I).
+			Identical(p.I(), program[0]).
+			Identical(p.PC, 0).
+			Confirm(p.ValidPC()).
+			Refute(p.Running)
 
-		p.StepForward()
-		TC.	Identical(p.I(), program.code[1]).
-			Identical(p.pc, 1).
-			Confirm(p.Program.ValidPC()).
-			Refute(p.ValidPC())
+		p.PC++
+		TC.	Safe(I).
+			Identical(p.I(), program[1]).
+			Identical(p.PC, 1).
+			Confirm(p.ValidPC()).
+			Refute(p.Running)
 
-		p.StepBack()
-		TC.	Identical(p.I(), program.code[0]).
-			Identical(p.pc, 0).
-			Confirm(p.Program.ValidPC()).
-			Refute(p.ValidPC())
+		p.PC--
+		TC.	Safe(I).
+			Identical(p.I(), program[0]).
+			Identical(p.PC, 0).
+			Confirm(p.ValidPC()).
+			Refute(p.Running)
 
-		p.JumpTo(program.Len())
-		TC.	Confirm(p.Program.ValidPC()).
-			Identical(program.Len() - 1, p.pc).
-			Refute(p.ValidPC())
+		p.PC = len(program)
+		TC.	Erroneous(I).
+			Refute(p.ValidPC()).
+			Refute(p.Running)
 
-		p.StepForward()
-		TC.	Refute(p.Program.ValidPC()).
-			Refute(p.ValidPC())
+		p.PC++
+		TC.	Erroneous(I).
+			Identical(p.PC, len(p.Program) + 1).
+			Refute(p.ValidPC()).
+			Refute(p.Running)
 
 		p.ResetState()
-		for i := 0; i < p.R.Len(); i++ {
-			TC.	Identical(p.R.IntBuffer[i], 0)
+		for _, v := range p.R {
+			TC.	Identical(v, 0)
 		}
-		TC.	Identical(BUFFER_ALLOCATION, p.R.Len(), p.R.Cap()).
+		TC.	Identical(BUFFER_ALLOCATION, len(p.R), cap(p.R)).
 			Refute(p.Running).
-			Identical(p.pc, 0).
+			Identical(p.PC, 0).
 			Confirm(p.M == nil).
-			Confirm(p.Program.ValidPC()).
-			Refute(p.ValidPC()).
-			Identical(p.Program.Len(), program.Len())
+			Confirm(p.ValidPC()).
+			Refute(p.Running)
 	}).
 	Run("Execution", func(TC *Test) {
 		p := new(ProcessorCore)
@@ -100,41 +108,40 @@ func TestProcessorCore(t *testing.T) {
 		program := simpleProgram(p)
 		p.LoadProgram(program)
 		p.Execute()												//	program[0]
-		TC.	Identical(p.R.IntBuffer[0], 37)
+		TC.	Identical(p.R[0], 37)
 
-		p.StepForward()
+		p.PC++
 		p.Execute()
-		TC.	Identical(p.R.IntBuffer[0], 38)							//	program[1]
+		TC.	Identical(p.R[0], 38)								//	program[1]
 
 		p.ResetState()
-		p.StepForward()											//	skip program[0]
-		p.Execute()
-		TC.	Identical(p.R.IntBuffer[0], 1)								//	program[1]
+		p.PC++											//	skip program[0]
+		p.Execute()												//	execute program[1]
+		TC.	Identical(p.R[0], 1).
+			Identical(p.PC, 2)
 
 		p.ResetState()
 		p.Run()													//	program[7] is an illegal instruction
 		TC.	Refute(p.Running).
-			Confirm(p.Illegal_Operation).
-			Identical(p.pc, p.Program.Len() - 1).				//	terminated without executing program[7]
-			Identical(p.R.IntBuffer[0], 37)
+			Identical(p.PC, 7).
+			Identical(p.R[0], 37)
 
-		p.Program.code[7] = &OpCode{							//	patch program[7] with a valid instruction
-			code: p.Code("cld"),
-			data: IntBuffer{1, 100},
+/*		p.Program.code[7] = OpCode{								//	patch program[7] with a valid instruction
+			code: p.Instruction("cld").op,
+			data: []int{1, 100},
 		}
 		p.ResetState()
 		p.Run()
 		TC.	Refute(p.Running).
-			Refute(p.Illegal_Operation).
-			Identical(p.pc, p.Program.Len()).					//	terminated with all instructions executed
-			Identical(p.R.IntBuffer[0], 37).
-			Identical(p.R.IntBuffer[1], 100)
+			Identical(p.PC, p.Program.Len()).					//	terminated with all instructions executed
+			Identical(p.R[0], 37).
+			Identical(p.R[1], 100)
 
 		p.LoadProgram(advancedProgram(p))
 		p.Run()
-		TC.	Identical(p.R.IntBuffer[0], 0).
-			Identical(p.R.IntBuffer[1], 1000)
-	}).
+		TC.	Identical(p.R[0], 0).
+			Identical(p.R[1], 1000)
+*/	}).
 	Run("To Do", func(TC *Test) {
 		TC.	Untested("InstructionSet handling").
 			Untested("ProcessorCore cloning").
