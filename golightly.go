@@ -23,7 +23,7 @@ func (p *Processor) Init(registers int) {
 	p.Define("ipush",	func (o *OpCode) { p.data_stack.Push(p.MP[o.ia]) })									//	IPUSH	m
 	p.Define("pop",		func (o *OpCode) { p.R.Set(o.a, p.data_stack.Pop()) })								//	POP		r
 	p.Define("ipop",	func (o *OpCode) { p.MP.Set(o.a, p.data_stack.Pop()) })								//	IPOP	m
-//	p.Define("pselect",	func (o *OpCode) { p.MP = IntBuffer(o.a) })											//	PSELECT	p	
+//	p.Define("pselect",	func (o *OpCode) { p.MP = IntBuffer(o.a) })											//	PSELECT	p
 	p.Define("ild",		func (o *OpCode) { p.R.Set(o.a, p.R.At(p.MP.At(o.b))) })							//	ILD		r1, r2
 	p.Define("istore",	func (o *OpCode) { p.MP.Set(p.R.At(o.b), p.R.At(o.a)) })							//	ISTORE	r, m
 }

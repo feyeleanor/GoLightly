@@ -152,7 +152,7 @@ func (t *Test) Different(values... interface{}) *Test {
 
 func (t *Test) printStackTrace() *Test {
 	if t.tracing {
-		
+
 	}
 	return t
 }
