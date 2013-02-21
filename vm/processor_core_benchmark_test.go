@@ -1,6 +1,6 @@
 package vm
 
-import . "golightly/storage"
+import "github.com/feyeleanor/slices"
 import "testing"
 
 func BenchmarkCreateProcessorCore(b *testing.B) {
@@ -14,7 +14,7 @@ func BenchmarkCloneProcessorCore(b *testing.B) {
 	b.StopTimer()
 		p := new(ProcessorCore)
 		p.Init(32, nil)
-		c := make(chan IntBuffer)
+		c := make(chan slices.ISlice)
 	b.StartTimer()
     for i := 0; i < b.N; i++ { p.Clone(c) }
 }

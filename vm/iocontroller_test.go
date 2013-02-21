@@ -1,7 +1,7 @@
 package vm
 
 import "testing"
-import . "golightly/storage"
+import "github.com/feyeleanor/slices"
 import . "golightly/test"
 
 func TestIOController(t *testing.T) {
@@ -10,10 +10,10 @@ func TestIOController(t *testing.T) {
 		i := IOController{}
 		TC.	Identical(len(i), cap(i), 0)
 
-		i = append(i, make(chan IntBuffer))
+		i = append(i, make(chan slices.ISlice))
 		TC.	Identical(len(i), cap(i), 1)
 
-		i = append(i, make(chan IntBuffer, 256))
+		i = append(i, make(chan slices.ISlice, 256))
 		TC.	Identical(len(i), cap(i), 2)
 
 		ioc := i.Clone()
@@ -21,10 +21,10 @@ func TestIOController(t *testing.T) {
 	}).
 	Run("Traffic", func(TC *Test) {
 		i := IOController{}
-		i = append(i, make(chan IntBuffer))
-		i = append(i, make(chan IntBuffer, 256))
+		i = append(i, make(chan slices.ISlice))
+		i = append(i, make(chan slices.ISlice, 256))
 
-		b := IntBuffer{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+		b := slices.ISlice{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 		i.Send(0, b)
 		TC.Identical(b, i.Receive(0))
 	})

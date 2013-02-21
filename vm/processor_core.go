@@ -4,9 +4,8 @@
 
 package vm
 
-import "container/vector"
-import . "golightly/storage"
-import "syscall"
+import "github.com/feyeleanor/slices"
+import "time"
 
 type IsExecutable interface {
 	Map(f interface{}) interface{}
@@ -15,21 +14,25 @@ type IsExecutable interface {
 
 type Thread struct {
 	Running			bool
-	R				IntBuffer
-	M				IntBuffer
-	CS				vector.IntVector
-	DS				vector.IntVector
+	R				slices.ISlice
+	M				slices.ISlice
+	CS				*slices.ISlice
+	DS				slices.ISlice
 	PC				int
 	Program
 }
 func (t *Thread) I() OpCode							{ return t.Program[t.PC] }
 func (t *Thread) ValidPC() bool						{ return t.PC > -1 && t.PC < len(t.Program) }
 func (t *Thread) Call(location int) {
-	t.CS.Push(t.PC)
+	t.CS.Append(t.PC)
 	t.PC = location
 }
 func (t *Thread) Return() {
-	t.PC = t.CS.Pop() + 1
+	if address, ok := t.CS.Pop(); ok {
+		t.PC = address + 1
+	} else {
+		panic(t)
+	}
 }
 
 
@@ -39,7 +42,7 @@ type ProcessorCore struct {
 	Thread
 }
 func (p *ProcessorCore) Init(registers int, instructions *InstructionSet) {
-	p.Thread = Thread{ R: make(IntBuffer, registers) }
+	p.Thread = Thread{ R: make(slices.ISlice, registers) }
 	if instructions == nil {
 		p.InstructionSet = new(InstructionSet)
 		p.InstructionSet.Init()
@@ -51,7 +54,7 @@ func (p *ProcessorCore) Init(registers int, instructions *InstructionSet) {
 
 //	Make a copy of the current processor, binding it to the current processor with
 //	the supplied io channel
-func (p *ProcessorCore) Clone(c chan IntBuffer) (q *ProcessorCore, i int) {
+func (p *ProcessorCore) Clone(c chan slices.ISlice) (q *ProcessorCore, i int) {
 	q = new(ProcessorCore)
 	q.Init(len(p.R), p.InstructionSet)
 	q.IOController = append(q.IOController, c)
@@ -61,16 +64,16 @@ func (p *ProcessorCore) Clone(c chan IntBuffer) (q *ProcessorCore, i int) {
 }
 func (p *ProcessorCore) DefineInstructions() {
 	p.Operator("noop",		func () {})																							//	NOOP
-	p.Operator("nsleep",	func (n int64) { syscall.Sleep(n) })																//	NSLEEP	n
-	p.Operator("sleep",		func (n int64) { syscall.Sleep(n << 32) })															//	SLEEP	n
+	p.Operator("nsleep",	func (n time.Duration) { time.Sleep(n) })																//	NSLEEP	n
+	p.Operator("sleep",		func (n time.Duration) { time.Sleep(n << 32) })															//	SLEEP	n
 	p.Movement("halt",		func () { p.Running = false })																		//	HALT
 	p.Movement("jmp",		func (n int) { p.PC += n })																			//	JMP		n
-	p.Movement("jmpz",		func (o []int) { if p.R.ZeroEqual(o[0]) { p.PC += o[1] } })											//	JMPZ	r, n
-	p.Movement("jmpnz",		func (o []int) { if !p.R.ZeroEqual(o[0]) { p.PC += o[1] } })										//	JMPNZ	r, n
+	p.Movement("jmpz",		func (o []int) { if p.R.ZeroSameAs(o[0]) { p.PC += o[1] } })										//	JMPZ	r, n
+	p.Movement("jmpnz",		func (o []int) { if !p.R.ZeroSameAs(o[0]) { p.PC += o[1] } })										//	JMPNZ	r, n
 	p.Movement("call",		func (n int) { p.Call(n) })																			//	CALL	n
 	p.Movement("ret",		func () { p.Return() })																				//	RET
-	p.Operator("push",		func (r int) { p.DS.Push(p.R[r]) })																	//	PUSH	r
-	p.Operator("pop",		func (r int) { p.R[r] = p.DS.Pop() })																//	POP		r
+	p.Operator("push",		func (r int) { p.DS.Append(p.R[r]) })																	//	PUSH	r
+	p.Operator("pop",		func (r int) { p.R[r], _ = p.DS.Pop() })																//	POP		r
 	p.Operator("cld",		func (o []int) { p.R[o[0]] = o[1] })																//	CLD		r, v
 	p.Operator("send",		func (c int) { p.IOController.Send(c, p.M) })														//	SEND	c
 	p.Operator("recv",		func (c int) { p.M = p.IOController.Receive(c) })													//	RECV	c
@@ -87,12 +90,12 @@ func (p *ProcessorCore) DefineInstructions() {
 func (p *ProcessorCore) LoadProgram(program Program) {
 	p.Program = make(Program, len(program))
 	copy(p.Program, program)
-	IntVector(p.R).ClearAll()
+	slices.ClearAll(p.R)
 	p.M = nil
 	p.PC = 0
 }
 func (p *ProcessorCore) ResetState() {
-	IntVector(p.R).ClearAll()
+	slices.ClearAll(p.R)
 	p.M = nil
 	p.PC = 0
 }
@@ -129,26 +132,26 @@ func (p *InlinedProcessorCore) Execute() {
 	case int:
 		switch o.code {
 		case 4:			p.PC += data
-		case 7:			p.CS.Push(p.PC)
+		case 7:			p.CS.Append(p.PC)
 						p.PC = data
-		case 9:			p.DS.Push(p.R[data])
-		case 10:		p.R[data] = p.DS.Pop()
+		case 9:			p.DS.Append(p.R[data])
+		case 10:		p.R[data], _ = p.DS.Pop()
 		case 12:		p.IOController.Send(data, p.M)
 		case 13:		p.M = p.IOController.Receive(data)
 		case 14:		p.R.Increment(data)
 		case 15:		p.R.Decrement(data)
 		default:		p.ProcessorCore.Execute()
 		}
-	case int64:
+	case time.Duration:
 		switch o.code {
-		case 1:			syscall.Sleep(data)
-		case 2:			syscall.Sleep(data << 32)
+		case 1:			time.Sleep(data)
+		case 2:			time.Sleep(data << 32)
 		default:		p.ProcessorCore.Execute()
 		}
 	case []int:
 		switch o.code {
-		case 5:			if p.R.ZeroEqual(data[0]) { p.PC += data[1] } else { p.PC++ }
-		case 6:			if !p.R.ZeroEqual(data[0]) { p.PC += data[1] } else { p.PC++ }
+		case 5:			if p.R.ZeroSameAs(data[0]) { p.PC += data[1] } else { p.PC++ }
+		case 6:			if !p.R.ZeroSameAs(data[0]) { p.PC += data[1] } else { p.PC++ }
 		case 11:		p.R[data[0]] = data[1]
 		case 16:		p.R.Add(data[0], data[1])
 		case 17:		p.R.Subtract(data[0], data[1])
@@ -163,7 +166,7 @@ func (p *InlinedProcessorCore) Execute() {
 		switch o.code {
 		case 0:
 		case 3:			p.Running = false
-		case 8:			p.PC = p.CS.Pop() + 1
+		case 8:			p.PC, _ = p.CS.Pop(); p.PC++
 		default:		p.ProcessorCore.Execute()
 		}
 	}

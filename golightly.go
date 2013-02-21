@@ -18,9 +18,9 @@ func (p *Processor) Init(registers int) {
 	p.Define("zjump",	func (o *OpCode) { if p.R.Equal(o.a, 0) { p.Jump(o.b) } })							//	ZJUMP	r, n
 	p.Define("icall",	func (o *OpCode) { p.Call(p.R.At(o.a)) })											//	ICALL	r
 	p.Define("ld",		func (o *OpCode) { p.R.Copy(o.a, o.b) })											//	LD		r1, r2
-	p.Define("push",	func (o *OpCode) { p.data_stack.Push(p.R[o.ia]) })									//	PUSH	r
-	p.Define("cpush",	func (o *OpCode) { p.data_stack.Push(o.ia) })										//	CPUSH	v
-	p.Define("ipush",	func (o *OpCode) { p.data_stack.Push(p.MP[o.ia]) })									//	IPUSH	m
+	p.Define("push",	func (o *OpCode) { p.data_stack.Append(p.R[o.ia]) })									//	PUSH	r
+	p.Define("cpush",	func (o *OpCode) { p.data_stack.Append(o.ia) })										//	CPUSH	v
+	p.Define("ipush",	func (o *OpCode) { p.data_stack.Append(p.MP[o.ia]) })									//	IPUSH	m
 	p.Define("pop",		func (o *OpCode) { p.R.Set(o.a, p.data_stack.Pop()) })								//	POP		r
 	p.Define("ipop",	func (o *OpCode) { p.MP.Set(o.a, p.data_stack.Pop()) })								//	IPOP	m
 //	p.Define("pselect",	func (o *OpCode) { p.MP = IntBuffer(o.a) })											//	PSELECT	p	

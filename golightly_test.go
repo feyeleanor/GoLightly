@@ -5,14 +5,14 @@ import (
 	"testing"
 )
 
-type TestCall func(int, float) (bool)
+type TestCall func(int, float64) (bool)
 
 func populate_block(m MemoryBlock) {
 	m[0] = "hello world";
 	m[1] = 37;
 	m[2] = true;
 	m[3] = 3.7;
-	m[4] = func(a int, b float) bool { return float(a) / 10 > b };
+	m[4] = func(a int, b float64) bool { return float64(a) / 10 > b };
 	m[5] = TestCall(m[4])(m[1], m[2]);
 }
 

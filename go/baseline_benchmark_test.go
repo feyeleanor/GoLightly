@@ -279,7 +279,6 @@ func BenchmarkBaselineTypeSwitchBasicTypesCase(b *testing.B) {
 		case uint:
 		case float32:
 		case float64:
-		case float:
 		case complex64:
 		case complex128:
 		case int8:

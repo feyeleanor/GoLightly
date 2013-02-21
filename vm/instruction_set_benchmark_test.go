@@ -2,8 +2,7 @@ package vm
 
 import "testing"
 import "fmt"
-import . "golightly/storage"
-//import "container/vector"
+import "github.com/feyeleanor/slices"
 
 func BenchmarkCreateOpCode(b *testing.B) {
 	var op *OpCode
@@ -32,7 +31,7 @@ func BenchmarkDefineInstruction(b *testing.B) {
 		in := new(InstructionSet)
 		in.Init()
 	b.StartTimer()
-	for i := 0; i < b.N; i++ { in.Define(fmt.Sprintf("%v", i), 0, func(o *IntBuffer) {}) }
+	for i := 0; i < b.N; i++ { in.Define(fmt.Sprintf("%v", i), 0, func(o slices.ISlice) {}) }
 }
 
 func BenchmarkDefineOperator(b *testing.B) {
@@ -40,7 +39,7 @@ func BenchmarkDefineOperator(b *testing.B) {
 		in := new(InstructionSet)
 		in.Init()
 	b.StartTimer()
-	for i := 0; i < b.N; i++ { in.Operator(fmt.Sprintf("%v", i), func(o *IntBuffer) {}) }
+	for i := 0; i < b.N; i++ { in.Operator(fmt.Sprintf("%v", i), func(o slices.ISlice) {}) }
 }
 
 func BenchmarkDefineMovement(b *testing.B) {
@@ -48,7 +47,7 @@ func BenchmarkDefineMovement(b *testing.B) {
 		in := new(InstructionSet)
 		in.Init()
 	b.StartTimer()
-	for i := 0; i < b.N; i++ { in.Movement(fmt.Sprintf("%v", i), func(o *IntBuffer) {}) }
+	for i := 0; i < b.N; i++ { in.Movement(fmt.Sprintf("%v", i), func(o slices.ISlice) {}) }
 }
 
 func BenchmarkNameToInstruction(b *testing.B) {
@@ -56,7 +55,7 @@ func BenchmarkNameToInstruction(b *testing.B) {
 		in := new(InstructionSet)
 		in.Init()
 		for i := 0; i < 1000; i++ {
-			in.Operator(fmt.Sprintf("%v", i), func(o *IntBuffer) {})
+			in.Operator(fmt.Sprintf("%v", i), func(o slices.ISlice) {})
 		}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ { in.Instruction("3") }
@@ -67,10 +66,10 @@ func BenchmarkAssemble(b *testing.B) {
 		in := new(InstructionSet)
 		in.Init()
 		for i := 0; i < 1000; i++ {
-			in.Operator(fmt.Sprintf("%v", i), func(o *IntBuffer) {})
+			in.Operator(fmt.Sprintf("%v", i), func(o slices.ISlice) {})
 		}
 	b.StartTimer()
-	for i := 0; i < b.N; i++ { in.Assemble("3", &IntBuffer{1, 2, 3}) }
+	for i := 0; i < b.N; i++ { in.Assemble("3", slices.ISlice{1, 2, 3}) }
 }
 
 func BenchmarkInstructionInvocation(b *testing.B) {
@@ -78,7 +77,7 @@ func BenchmarkInstructionInvocation(b *testing.B) {
 		in := new(InstructionSet)
 		in.Init()
 		for i := 0; i < 1000; i++ {
-			in.Operator(fmt.Sprintf("%v", i), func(o *IntBuffer) {})
+			in.Operator(fmt.Sprintf("%v", i), func(o slices.ISlice) {})
 		}
 		op := in.Assemble("3", nil)
 	b.StartTimer()

@@ -118,8 +118,8 @@ func (i intContainer) Repeat(count int) (n intContainer) {
 	return
 }
 
-type floatPredicate		func(float) bool
-type floatContainer		[]float
+type floatPredicate		func(float64) bool
+type floatContainer		[]float64
 func (f floatContainer) Prove(x floatPredicate) bool {
 	for _, v := range f {
 		if !x(v) {

@@ -4,7 +4,7 @@
 
 package vm
 
-import "container/vector"
+import "github.com/feyeleanor/slices"
 import "fmt"
 import "reflect"
 
@@ -14,7 +14,7 @@ type OpCode struct {
 	data		interface{}
 }
 func (o OpCode) Similar(p OpCode) bool {
-	return o.code == p.code && o.movement == p.movement && reflect.Typeof(o.data) == reflect.Typeof(p.data)
+	return o.code == p.code && o.movement == p.movement && reflect.TypeOf(o.data) == reflect.TypeOf(p.data)
 }
 func (o OpCode) Identical(p OpCode) bool {
 	return reflect.DeepEqual(o, p)
@@ -38,7 +38,7 @@ type Instruction struct {
 }
 
 type InstructionSet struct {
-	ops				vector.Vector
+	ops				slices.Slice
 	tokens			map[string] *Instruction
 }
 func (i *InstructionSet) Init() {
@@ -53,7 +53,7 @@ func (i *InstructionSet) Exists(name string) bool {
 }
 func (i *InstructionSet) Define(name string, movement int, closure interface{}) (successful bool) {
 	if _, ok := i.tokens[name]; !ok {
-		i.ops.Push(closure)
+		i.ops.Append(closure)
 		i.tokens[name] = &Instruction{op: i.ops.Len() - 1, movement: movement}
 		successful = true
 	}

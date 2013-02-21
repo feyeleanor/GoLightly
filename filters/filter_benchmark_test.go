@@ -428,7 +428,7 @@ func BenchmarkProvefloat1(b *testing.B) {
 func BenchmarkProvefloat10(b *testing.B) {
 	b.StopTimer()
 		c := floatContainer{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 0.0}
-		f := func(x float) bool { return x >= 0.0 }
+		f := func(x float64) bool { return x >= 0.0 }
 	b.StartTimer()
 	for i := 0; i < b.N; i++ { c.Prove(f) }
 }
