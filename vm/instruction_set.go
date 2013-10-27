@@ -4,9 +4,11 @@
 
 package vm
 
-import "github.com/feyeleanor/slices"
-import "fmt"
-import "reflect"
+import (
+	"github.com/feyeleanor/slices"
+	"fmt"
+	"reflect"
+)
 
 type OpCode struct {
 	code		int
