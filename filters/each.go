@@ -23,16 +23,14 @@ func Each(i, f interface{}) {
 	default:
 		switch f := f.(type) {
 		case func(interface{}):
-			switch i := NewValue(i).(type) {
-			case *ChanValue:
-				for !i.Closed() { f(i.Recv().Interface()) }
-			case *StringValue:
-				for c := range i.Get() { f(c) }
-			case *SliceValue:
-				for j := 0; j < i.Len(); j++ { f(i.Elem(j).Interface()) }
-			case *MapValue:
-				for _, k := range i.Keys() { f(i.Elem(k).Interface()) }
-			case *FuncValue:
+			switch i := ValueOf(i); i.Kind() {
+			case Chan:
+				for v, ok := i.Recv(); ok; v, ok = i.Recv() { f(v.Interface()) }
+			case String, Slice:
+				for j := 0; j < i.Len(); j++ { f(i.Index(j).Interface()) }
+			case Map:
+				for _, k := range i.MapKeys() { f(i.MapIndex(k).Interface()) }
+			case Func:
 				for {
 					if v := i.Call([]Value{}); len(v) != 0 {
 						f(unpackValueArray(v))
@@ -44,45 +42,35 @@ func Each(i, f interface{}) {
 				f(i.Interface())
 			}
 		default:
-			fullyReflectedEach(NewValue(i), NewValue(f))
+			fullyReflectedEach(ValueOf(i), ValueOf(f))
 		}
 	}
 }
 
 func fullyReflectedEach(i, f Value) {
-	switch f := f.(type) {
-	case *FuncValue:
-		if t := f.Type().(*FuncType); t.NumIn() != 0 {
-			switch i := i.(type) {
-			case *StringValue:
-				if t == Typeof(int(0)) {
-					for c := range i.Get() {
-						f.Call([]Value{NewValue(c)})
-					}
+	switch f.Kind() {
+	case Func:
+		if t := TypeOf(f); t.NumIn() != 0 {
+			switch i.Kind() {
+			case Chan:
+				for v, ok := i.Recv(); ok; v, ok = i.Recv() {
+					f.Call([]Value{v})
 				}
-			case *ChanValue:
-				for !i.Closed() {
-					f.Call([]Value{i.Recv()})
+			case String:
+				for j := 0; j < i.Len(); j++ {
+					f.Call([]Value{i.Index(j)})
 				}
-			case *SliceValue:
-				if i.Type().(*SliceType).Elem() == t.In(0) {
-					for j := 0; j < i.Len(); j++ {
-						f.Call([]Value{i.Elem(j)})
-					}
+			case Slice:
+				for j := 0; j < i.Len(); j++ {
+					f.Call([]Value{i.Index(j)})
 				}
-			case *MapValue:
-				for _, k := range i.Keys() {
-					f.Call([]Value{i.Elem(k)})
+			case Map:
+				for _, k := range i.MapKeys() {
+					f.Call([]Value{i.MapIndex(k)})
 				}
-			case *FuncValue:
-				for {
-					if i.Type().(*FuncType).Out(0) == t.In(0) {
-						if v := i.Call([]Value{}); len(v) != 0 {
-							f.Call(v)
-						} else {
-							break
-						}
-					}
+			case Func:
+				for v := i.Call([]Value{}); len(v) != 0; v = i.Call([]Value{}) {
+					f.Call(v)
 				}
 			}
 		}

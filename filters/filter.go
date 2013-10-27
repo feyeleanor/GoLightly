@@ -15,20 +15,20 @@ func Count(i interface{}, p interface{}) (n int) {
 		}
 	default:
 		p := p.(Predicate)
-		switch values := NewValue(i).(type) {
-		case *ChanValue:
-			for !values.Closed() {
-				if p(values.Recv().Interface()) { n++ }
+		switch values := ValueOf(i); values.Kind() {
+		case Chan:
+			for v, ok := values.Recv(); ok; v, ok = values.Recv() {
+				if p(v.Interface()) { n++ }
 			}
-		case *SliceValue:
+		case String, Slice:
 			for j := 0; j < values.Len(); j++ {
-				if p(values.Elem(j).Interface()) { n++ }
+				if p(values.Index(j).Interface()) { n++ }
 			}
-		case *MapValue:
-			for _, k := range values.Keys() {
-				if p(values.Elem(k).Interface()) { n++ }
+		case Map:
+			for _, k := range values.MapKeys() {
+				if p(values.MapIndex(k).Interface()) { n++ }
 			}
-		case *FuncValue:
+		case Func:
 			for {
 				if v := values.Call([]Value{}); len(v) != 0 {
 					p(v)

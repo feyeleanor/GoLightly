@@ -420,7 +420,7 @@ func BenchmarkProveint10000prove(b *testing.B) {
 func BenchmarkProvefloat1(b *testing.B) {
 	b.StopTimer()
 		c := floatContainer{1.0}
-		f := func(x float) bool { return x >= 0.0 }
+		f := func(x float64) bool { return x >= 0.0 }
 	b.StartTimer()
 	for i := 0; i < b.N; i++ { c.Prove(f) }
 }
