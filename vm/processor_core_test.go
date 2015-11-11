@@ -30,7 +30,7 @@ func intermediateProgram(a Assembler) Program {
 
 func advancedProgram(a Assembler) Program {
 	program := intermediateProgram(a)
-	program[0].data = []int{0, 1000}
+	program[0].Data = []int{0, 1000}
 	return program
 }
 
@@ -126,9 +126,9 @@ func TestProcessorCore(t *testing.T) {
 			Identical(p.PC, 7).
 			Identical(p.R[0], 37)
 
-/*		p.Program.code[7] = OpCode{								//	patch program[7] with a valid instruction
-			code: p.Instruction("cld").op,
-			data: []int{1, 100},
+/*		p.Program.Code[7] = OpCode{								//	patch program[7] with a valid instruction
+			Code: p.Instruction("cld").op,
+			Data: []int{1, 100},
 		}
 		p.ResetState()
 		p.Run()

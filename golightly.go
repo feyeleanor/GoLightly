@@ -1,29 +1,71 @@
 //	TODO:	Further work on the memory page model and how that interacts with the register model
 //	TODO:	Add more support for debugging to ProcessorCore
+//	TODO:	Consider alternatives for VLIW
+//				1	pool of channels all working against current processor state
+//				2	duplicated processors each feeding back results
+//				synchoronous or asynchronous operation?
 
 package golightly
 
-import(
-	"./vm";
-	"container/vector";
-)
+import . "golightly/vm"
 
 type Processor struct {
-	ProcessorCore;
-	data_stack		vector.IntVector;
+	ProcessorCore
+	data_stack []int
 }
+
 func (p *Processor) Init(registers int) {
-	p.ProcessorCore.Init(registers)
-	p.Define("ijump",	func (o *OpCode) { p.Jump(p.R.At(o.ia)) })											//	IJUMP	r
-	p.Define("zjump",	func (o *OpCode) { if p.R.Equal(o.a, 0) { p.Jump(o.b) } })							//	ZJUMP	r, n
-	p.Define("icall",	func (o *OpCode) { p.Call(p.R.At(o.a)) })											//	ICALL	r
-	p.Define("ld",		func (o *OpCode) { p.R.Copy(o.a, o.b) })											//	LD		r1, r2
-	p.Define("push",	func (o *OpCode) { p.data_stack.Append(p.R[o.ia]) })									//	PUSH	r
-	p.Define("cpush",	func (o *OpCode) { p.data_stack.Append(o.ia) })										//	CPUSH	v
-	p.Define("ipush",	func (o *OpCode) { p.data_stack.Append(p.MP[o.ia]) })									//	IPUSH	m
-	p.Define("pop",		func (o *OpCode) { p.R.Set(o.a, p.data_stack.Pop()) })								//	POP		r
-	p.Define("ipop",	func (o *OpCode) { p.MP.Set(o.a, p.data_stack.Pop()) })								//	IPOP	m
-//	p.Define("pselect",	func (o *OpCode) { p.MP = IntBuffer(o.a) })											//	PSELECT	p	
-	p.Define("ild",		func (o *OpCode) { p.R.Set(o.a, p.R.At(p.MP.At(o.b))) })							//	ILD		r1, r2
-	p.Define("istore",	func (o *OpCode) { p.MP.Set(p.R.At(o.b), p.R.At(o.a)) })							//	ISTORE	r, m
+	p.ProcessorCore.Init(registers, new(InstructionSet))
+
+	p.Movement("ijump", "r", func(o *OpCode) {
+		p.PC = p.R.At(o.Data.(int)).(int)
+	})
+
+	p.Movement("zjump", "r, n", func(o *OpCode) {
+		if p.R.Equal(o.a, 0) {
+			p.PC = o.b
+		}
+	})
+
+	p.Movement("icall", "r", func(o *OpCode) {
+		p.Call(p.R.At(o.a).(int))
+	})
+
+	p.Operator("ld", "r1, r2", func(o *OpCode) {
+		p.R.Copy(o.a, o.b)
+	})
+
+	p.Operator("push", "r", func(o *OpCode) {
+		p.data_stack = append(p.data_stack, p.R[o.ia])
+	})
+
+	p.Operator("cpush", "v", func(o *OpCode) {
+		p.data_stack.Append(o.ia)
+	})
+
+	p.Operator("ipush", "m", func(o *OpCode) {
+		p.data_stack.Append(p.MP[o.ia])
+	})
+
+	p.Operator("pop", "r", func(o *OpCode) {
+		p.R.Set(o.a, p.data_stack.Pop())
+	})
+
+	p.Operator("ipop", "m", func(o *OpCode) {
+		p.MP.Set(o.a, p.data_stack.Pop())
+	})
+
+	/*
+		p.Operator("pselect", "p", func(o *OpCode) {
+			p.MP = IntBuffer(o.a)
+		})
+	*/
+
+	p.Operator("ild", "r1, r2", func(o *OpCode) {
+		p.R.Set(o.a, p.R.At(p.MP.At(o.b)))
+	})
+
+	p.Operator("istore", "r, m", func(o *OpCode) {
+		p.MP.Set(p.R.At(o.b), p.R.At(o.a))
+	})
 }
