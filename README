@@ -1,4 +1,6 @@
-== About GoLightly ==
+#GoLightly
+
+## About GoLightly
 
 GoLightly is a lightweight virtual machine library implemented in Go, designed for flexibility and
 reuse. Traditionally popular VMs have adopted a stack-based design as this is perceived to be easier
@@ -30,7 +32,7 @@ Likewise the ability to clone virtual processors can be used as a building block
 and speculative execution.
 
 
-== Tests and Benchmarks ==
+## Tests and Benchmarks 
 
 Golightly includes a large collection of tests and benchmarks. A simple set of micro-benchmarks
 is available to judge the relative cost of various standard Go instructions and idioms which can
